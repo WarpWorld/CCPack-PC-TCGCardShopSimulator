@@ -66,12 +66,14 @@ namespace BepinControl
         {
             try
             {
+                bool hasLoaded = CSingleton<CGameManager>.Instance.m_IsGameLevel;
+                if (!hasLoaded) return false;
                 //make sure the game is in focus otherwise don't let effects trigger
                 if (!TestMod.isFocused) return false;
                 //add check for whether the game is in a state it can accept effects
-               // CPlayerData player = Singleton<CPlayerData>.Instance; <- Need to find an alternative check
-                //if (player == null) return false;
-
+                PauseScreen PS = CSingleton < PauseScreen>.Instance;
+                bool isPaused = PS.m_ScreenGrp.activeSelf;
+                if (isPaused) return false;
 
             }
             catch (Exception e)

@@ -22,43 +22,10 @@ namespace BepinControl
 
 
 
-    public static class CustomerChatNames
-    {
-        private static Dictionary<int, string> chatNames = new Dictionary<int, string>();
-
-        public static void SetChatName(int customerId, string name)
-        {
-            chatNames[customerId] = name;
-        }
-
-        public static string GetChatName(int customerId)
-        {
-            if (chatNames.TryGetValue(customerId, out string name))
-            {
-                return name;
-            }
-            return null; // Or a default name
-        }
-    }
-
-
-
     public class CrowdDelegates
     {
         public static System.Random rnd = new System.Random();
         public static int maxBoxCount = 100;
-        public enum Language
-        {
-            English = 0,
-            French = 1,
-            German = 2,
-            Italian = 3,
-            Spanish = 4,
-            Portugal = 5,
-            Brazil = 6,
-            Netherlands = 7,
-            Turkey = 8
-        }
 
         public static CrowdResponse ToggleLights(ControlClient client, CrowdRequest req)
         {
@@ -67,17 +34,10 @@ namespace BepinControl
 
             try
             {
-                try
+                TestMod.ActionQueue.Enqueue(() =>
                 {
-                    TestMod.ActionQueue.Enqueue(() =>
-                    {
-                        LightManager.Instance.ToggleShopLight();
-                    });
-                }
-                catch (Exception e)
-                {
-
-                }
+                    LightManager.Instance.ToggleShopLight();
+                });
             }
             catch (Exception e)
             {
