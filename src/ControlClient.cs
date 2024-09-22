@@ -75,8 +75,8 @@ namespace BepinControl
         {
             try
             {
-                bool hasLoaded = CSingleton<CGameManager>.Instance.m_IsGameLevel;
-                if (!hasLoaded) return false;
+                bool isFullyLoaded = GameInstance.m_HasFinishHideLoadingScreen && CSingleton<CGameManager>.Instance.m_IsGameLevel;
+                if(!isFullyLoaded) return false;
                 //make sure the game is in focus otherwise don't let effects trigger
                 if (!TestMod.isFocused) return false;
                 //add check for whether the game is in a state it can accept effects
