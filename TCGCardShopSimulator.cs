@@ -18,8 +18,7 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
 
         public override EffectList Effects => new List<Effect>
         {
-                new Effect("Spawn Customer", "spawn") { Description = "Spawns a New Customer", Category = "Spawn"},
-               
-        };
+                new Effect("Toggle Lights", "lights") { Description = "Toggle the Shop Lights", Category = "Misc"},
+                new Effect("Spawn Customer", "spawn") { Description = "Spawns a New Customer", Category = "Spawn"},     };
     }
 }

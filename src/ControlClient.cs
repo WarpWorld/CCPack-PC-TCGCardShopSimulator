@@ -57,6 +57,7 @@ namespace BepinControl
             Delegate = new Dictionary<string, CrowdDelegate>()
             {
                 //when an effect comes in with the code it will call the paired function
+                {"lights", CrowdDelegates.ToggleLights },
                 {"spawn", CrowdDelegates.SpawnCustomer },
             };
         }

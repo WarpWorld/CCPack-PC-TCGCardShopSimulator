@@ -60,7 +60,7 @@ namespace BepinControl
             Turkey = 8
         }
 
-        public static CrowdResponse SpawnCustomer(ControlClient client, CrowdRequest req)
+        public static CrowdResponse ToggleLights(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
@@ -79,7 +79,35 @@ namespace BepinControl
 
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse SpawnCustomer(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            try
+            {
+                try
+                {
+                    TestMod.ActionQueue.Enqueue(() =>
+                    {
+                        CustomerManager CM = CustomerManager.Instance;
+                        CM.GetNewCustomer();
+                    });
+                }
+                catch (Exception e)
+                {
+
+                }
+            }
+            catch (Exception e)
             {
                 TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
                 status = CrowdResponse.Status.STATUS_RETRY;
