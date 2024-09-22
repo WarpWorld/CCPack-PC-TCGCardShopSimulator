@@ -46,6 +46,7 @@ namespace BepinControl
         internal static TestMod Instance = null;
         private ControlClient client = null;
         public static bool isFocused = true;
+        public static bool doneItems = false;
 
         public static string NameOverride = "";
 
@@ -88,7 +89,14 @@ namespace BepinControl
         [HarmonyPrefix]
         static void RunEffects()
         {
-
+            if(CGameManager.Instance.m_IsGameLevel && !doneItems)
+            {
+                foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ItemDataList.ToArray())
+                {
+                    TestMod.mls.LogInfo(cardPack.name);
+                }
+                doneItems = true;
+            }
             while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();
