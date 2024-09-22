@@ -49,7 +49,10 @@ namespace BepinControl
         public static bool doneItems = false;
 
         public static string NameOverride = "";
+        public enum EItemType
+        {
 
+        }
 
         void Awake()
         {
@@ -91,7 +94,7 @@ namespace BepinControl
         {
             if(CGameManager.Instance.m_IsGameLevel && !doneItems)
             {
-                foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ItemDataList.ToArray())
+                foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
                 {
                     TestMod.mls.LogInfo(cardPack.name);
                 }

@@ -130,6 +130,44 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            ItemData requested = null;
+            var item = "";
+            RestockData item2 = null;
+            string[] enteredText = req.code.Split('_');
+            if(enteredText.Length > 0)
+            try
+            {
+                    if (enteredText.Length > 3) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]);
+                    else item = string.Join(" ", enteredText[1], enteredText[2]);
+                 requested = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ItemDataList.Find(z => z.name.ToLower().Contains(item.ToLower()));
+                 item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(item.ToLower()));
+            }
+            catch
+            {
+                return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "WHERES THE MONEY");
+
+            }
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    if(item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, 64, item2.isBigBox);
+                    else RestockManager.SpawnPackageBoxItem(item2.itemType, 32, item2.isBigBox);
+                });
+
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
         public static void setProperty(System.Object a, string prop, System.Object val)
         {
             var f = a.GetType().GetField(prop, BindingFlags.Instance | BindingFlags.NonPublic);
