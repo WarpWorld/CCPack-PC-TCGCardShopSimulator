@@ -1,19 +1,5 @@
-﻿using DG.Tweening;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Threading;
-using System.Xml.Linq;
-using UnityEngine;
-using UnityEngine.UI;
-using I2.Loc;
-using static System.Collections.Specialized.BitVector32;
-using static System.Net.Mime.MediaTypeNames;
-using static UnityEngine.EventSystems.EventTrigger;
-using static UnityEngine.GraphicsBuffer;
-using JetBrains.Annotations;
-using MyBox;
 
 
 namespace BepinControl
@@ -130,21 +116,21 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA
+        public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-            ItemData requested = null;
             var item = "";
             RestockData item2 = null;
             string[] enteredText = req.code.Split('_');
             if(enteredText.Length > 0)
             try
             {
-                    if (enteredText.Length > 3) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]);
-                    else item = string.Join(" ", enteredText[1], enteredText[2]);
-                 requested = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ItemDataList.Find(z => z.name.ToLower().Contains(item.ToLower()));
-                 item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(item.ToLower()));
+                    if (enteredText.Length == 5) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3], enteredText[4]);
+                    else if (enteredText.Length == 4) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]);//playmat, Plushie
+                    else if (enteredText.Length == 3) item = string.Join(enteredText[1], enteredText[2]);//single items like Freshener
+                    else item = enteredText[1];
+                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(item.ToLower()));//Item bools
             }
             catch
             {

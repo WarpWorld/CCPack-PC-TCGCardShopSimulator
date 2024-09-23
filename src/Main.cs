@@ -1,30 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using UnityEngine;
-using UnityEngine.Assertions;
-using UnityEngine.Assertions.Must;
-using UnityEngine.SceneManagement;
-using Random = UnityEngine.Random;
-using System.Collections;
-using System.Security.AccessControl;
-using BepInEx.Configuration;
-using System.Reflection;
-using static System.Net.Mime.MediaTypeNames;
 using System.Threading;
-using BepinControl;
-using System.Runtime.InteropServices;
-using System.Runtime.ConstrainedExecution;
-using System.Security.Cryptography;
-using TMPro;
 using UnityEngine.EventSystems;
 
 
@@ -49,10 +28,6 @@ namespace BepinControl
         public static bool doneItems = false;
 
         public static string NameOverride = "";
-        public enum EItemType
-        {
-
-        }
 
         void Awake()
         {
@@ -92,7 +67,7 @@ namespace BepinControl
         [HarmonyPrefix]
         static void RunEffects()
         {
-            if(CGameManager.Instance.m_IsGameLevel && !doneItems)
+            if(CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
             {
                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
                 {

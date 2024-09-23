@@ -20,14 +20,12 @@
  * USA
  */
 
-using MyBox;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using UnityEngine;
 
 
 namespace BepinControl
@@ -67,7 +65,22 @@ namespace BepinControl
                 {"take_10000", CrowdDelegates.TakeMoney },
                 {"give_common_pack_(32)", CrowdDelegates.GiveItem },
                 {"give_common_pack_(64)", CrowdDelegates.GiveItem },
+                {"give_common_box_(4)", CrowdDelegates.GiveItem },
+                {"give_common_box_(8)", CrowdDelegates.GiveItem },
+                {"give_rare_pack_(32)", CrowdDelegates.GiveItem },
+                {"give_rare_pack_(64)", CrowdDelegates.GiveItem },
+                {"give_rare_box_(4)", CrowdDelegates.GiveItem },
+                {"give_rare_box_(8)", CrowdDelegates.GiveItem },
+                {"give_epic_pack_(32)", CrowdDelegates.GiveItem },
+                {"give_epic_pack_(64)", CrowdDelegates.GiveItem },
+                {"give_epic_box_(4)", CrowdDelegates.GiveItem },
+                {"give_epic_box_(8)", CrowdDelegates.GiveItem },
+                {"give_legend_pack_(32)", CrowdDelegates.GiveItem },
+                {"give_legend_pack_(64)", CrowdDelegates.GiveItem },
+                {"give_legend_box_(4)", CrowdDelegates.GiveItem },
+                {"give_legend_box_(8)", CrowdDelegates.GiveItem },
                 {"give_playmat_(drilceros)", CrowdDelegates.GiveItem },
+                {"give_playmat_(lunight)", CrowdDelegates.GiveItem },
             };
         }
 
