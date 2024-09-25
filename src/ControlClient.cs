@@ -57,6 +57,14 @@ namespace BepinControl
                 //when an effect comes in with the code it will call the paired function
                 {"lights", CrowdDelegates.ToggleLights },
                 {"spawn", CrowdDelegates.SpawnCustomer },
+                {"spawnsmelly", CrowdDelegates.SpawnCustomerSmelly },
+                {"open_store", CrowdDelegates.ShopControls },
+                {"close_store", CrowdDelegates.ShopControls },
+                {"unlockwh", CrowdDelegates.UnlockWarehouse },
+                {"upgradewh", CrowdDelegates.UpgradeWarehouse },
+                {"upgradestore", CrowdDelegates.UpgradeStore },
+                {"teleport", CrowdDelegates.TeleportPlayer },
+                {"forcemath", CrowdDelegates.ForceMath },
                 {"give_100", CrowdDelegates.GiveMoney },
                 {"give_1000", CrowdDelegates.GiveMoney },
                 {"give_10000", CrowdDelegates.GiveMoney },
@@ -88,12 +96,13 @@ namespace BepinControl
         {
             try
             {
-                bool isFullyLoaded = GameInstance.m_HasFinishHideLoadingScreen && CSingleton<CGameManager>.Instance.m_IsGameLevel;
+                CGameManager CGM = CSingleton<CGameManager>.Instance;
+                bool isFullyLoaded = CGM.m_IsGameLevel;
                 if(!isFullyLoaded) return false;
                 //make sure the game is in focus otherwise don't let effects trigger
                 if (!TestMod.isFocused) return false;
                 //add check for whether the game is in a state it can accept effects
-                PauseScreen PS = CSingleton < PauseScreen>.Instance;
+                PauseScreen PS = CSingleton<PauseScreen>.Instance;
                 bool isPaused = PS.m_ScreenGrp.activeSelf;
                 if (isPaused) return false;
 
@@ -144,7 +153,7 @@ namespace BepinControl
 
             TestMod.mls.LogInfo("Connected to Crowd Control");
 
-            var timer = new Timer(timeUpdate, null, 0, 200);
+            var timer = new Timer(timeUpdate, null, 0, 150);
 
             try
             {
@@ -172,18 +181,18 @@ namespace BepinControl
 
             if (!inGame)
             {
-                TimedThread.addTime(200);
+                TimedThread.addTime(150);
                 paused = true;
             }
             else if (paused)
             {
                 paused = false;
                 TimedThread.unPause();
-                TimedThread.tickTime(200);
+                TimedThread.tickTime(150);
             }
             else
             {
-                TimedThread.tickTime(200);
+                TimedThread.tickTime(150);
             }
         }
 

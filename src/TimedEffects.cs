@@ -60,7 +60,17 @@ namespace BepinControl
 
         public void addEffect()
         {
-
+            switch (type)
+            {
+                case TimedType.FORCE_MATH:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            TestMod.ForceMath = true;
+                        });
+                        break;
+                    }
+            }
         }
 
     

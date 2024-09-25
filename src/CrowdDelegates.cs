@@ -1,5 +1,10 @@
-﻿using System;
+﻿
+using System;
+using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
+using TMPro;
+using UnityEngine;
 
 
 namespace BepinControl
@@ -37,14 +42,16 @@ namespace BepinControl
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-
+            LightManager LM = CSingleton<LightManager>.Instance;
+            CustomerManager CM = CustomerManager.Instance;
+            bool hasDayEnded = (bool)getProperty(LM, "m_HasDayEnded");
+            if (!CPlayerData.m_IsShopOnceOpen || hasDayEnded) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
-                    TestMod.ActionQueue.Enqueue(() =>
-                    {
-                        CustomerManager CM = CustomerManager.Instance;
-                        CM.GetNewCustomer();
-                    });
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    CM.GetNewCustomer();
+                });
             }
             catch (Exception e)
             {
@@ -53,6 +60,76 @@ namespace BepinControl
             }
 
             return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse SpawnCustomerSmelly(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            LightManager LM = CSingleton<LightManager>.Instance;
+            CustomerManager CM = CustomerManager.Instance;
+            bool hasDayEnded = (bool)getProperty(LM, "m_HasDayEnded");
+            if (!CPlayerData.m_IsShopOnceOpen || hasDayEnded) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    Customer Smelly = CM.GetNewCustomer();
+                    if(Smelly != null) Smelly.SetSmelly();
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse TeleportPlayer(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+
+
+                    Transform pos = CSingleton<InteractionPlayerController>.Instance.transform;
+                    TestMod.mls.LogInfo($"Player POS: {pos.position}");
+                    Vector3 teleportPosition = new Vector3();
+
+                    teleportPosition = new Vector3(15.00f, 0.06f, -1.46f);
+                    CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform.position = teleportPosition;
+
+
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse ForceMath(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+
+            if (TimedThread.isRunning(TimedType.FORCE_MATH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            UI_CashCounterScreen ui_CashCounterScreen = CSingleton<UI_CashCounterScreen>.Instance;
+            TextMeshProUGUI text = (TextMeshProUGUI)getProperty(ui_CashCounterScreen, "m_ChangeToGiveAmountText");
+            text.text = "DO THE MATH";
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_MATH, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
         public static CrowdResponse GiveMoney(ControlClient client, CrowdRequest req)
         {
@@ -116,6 +193,105 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        public static CrowdResponse ShopControls(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            string[] enteredText = req.code.Split('_');
+            try
+            {
+                if (enteredText[0] == "close" && CPlayerData.m_IsShopOpen == true)
+                {
+                    TestMod.ActionQueue.Enqueue(() =>
+                    {
+                        CPlayerData.m_IsShopOpen = false;
+                        InteractableOpenCloseSign.FindFirstObjectByType<InteractableOpenCloseSign>().m_CloseShopMesh.SetActive(true);
+                        InteractableOpenCloseSign.FindFirstObjectByType<InteractableOpenCloseSign>().m_OpenShopMesh.SetActive(false);
+                        CPlayerData.m_IsShopOnceOpen = false;
+                    });
+                }
+                else if (enteredText[0] == "open" && CPlayerData.m_IsShopOpen == false)
+                {
+                    TestMod.ActionQueue.Enqueue(() =>
+                    {
+                        CPlayerData.m_IsShopOpen = true;
+                        InteractableOpenCloseSign.FindFirstObjectByType<InteractableOpenCloseSign>().m_CloseShopMesh.SetActive(false);
+                        InteractableOpenCloseSign.FindFirstObjectByType<InteractableOpenCloseSign>().m_OpenShopMesh.SetActive(true);
+                        CPlayerData.m_IsShopOnceOpen = true;
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse UpgradeWarehouse(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            if (CPlayerData.m_UnlockWarehouseRoomCount == 8 || CPlayerData.m_IsWarehouseRoomUnlocked == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage Is Unlocked");
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    TestMod.WareHouseRoomsUnlocked++;
+                    UnlockRoomManager.Instance.StartUnlockNextWarehouseRoom();
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_FAILURE;
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse UpgradeStore(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            if (CPlayerData.m_UnlockRoomCount == 20) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage Is Unlocked");
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    TestMod.ShopRoomUnlocked++;
+                    UnlockRoomManager.Instance.StartUnlockNextRoom();
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_FAILURE;
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse UnlockWarehouse(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            if (CPlayerData.m_IsWarehouseRoomUnlocked == true) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage Is Unlocked");
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    TestMod.isWarehouseUnlocked = true;
+                    UnlockRoomManager.Instance.SetUnlockWarehouseRoom(true);
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_FAILURE;
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
         public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -156,13 +332,28 @@ namespace BepinControl
         }
         public static void setProperty(System.Object a, string prop, System.Object val)
         {
-            var f = a.GetType().GetField(prop, BindingFlags.Instance | BindingFlags.NonPublic);
+            var f = a.GetType().GetField(prop, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            if (f == null)
+            {
+                TestMod.mls.LogInfo($"Field {prop} not found in {a.GetType()}");
+                return;
+            }
+
             f.SetValue(a, val);
         }
 
+
         public static System.Object getProperty(System.Object a, string prop)
         {
-            var f = a.GetType().GetField(prop, BindingFlags.Instance | BindingFlags.NonPublic);
+            var f = a.GetType().GetField(prop, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            if (f == null)
+            {
+                TestMod.mls.LogInfo($"Field {prop} not found in {a.GetType()}");
+                return null;
+            }
+
             return f.GetValue(a);
         }
 

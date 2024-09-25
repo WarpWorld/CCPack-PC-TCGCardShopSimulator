@@ -26,7 +26,10 @@ namespace BepinControl
         private ControlClient client = null;
         public static bool isFocused = true;
         public static bool doneItems = false;
-
+        public static bool ForceMath = false;
+        public static bool isWarehouseUnlocked = false;
+        public static int WareHouseRoomsUnlocked = 0;
+        public static int ShopRoomUnlocked = 0;
         public static string NameOverride = "";
 
         void Awake()
@@ -71,10 +74,12 @@ namespace BepinControl
             {
                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
                 {
-                    TestMod.mls.LogInfo(cardPack.name);
+                    TestMod.mls.LogInfo(cardPack.name + " : Warehouse Rooms: "+ UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count);
+
                 }
                 doneItems = true;
             }
+            
             while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();
