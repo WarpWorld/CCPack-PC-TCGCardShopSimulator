@@ -343,7 +343,6 @@ namespace BepinControl
             f.SetValue(a, val);
         }
 
-
         public static System.Object getProperty(System.Object a, string prop)
         {
             var f = a.GetType().GetField(prop, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);

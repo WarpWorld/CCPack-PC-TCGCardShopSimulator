@@ -28,8 +28,6 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new Effect("Upgrade the Player Store", "upgradestore") { Description = "Upgrades the Player Store Size", Category = "Misc"},
                 new Effect("Make the streamer do the Math", "forcemath") { Description = "Force The Player to do Math", Category = "Player"},
                 new Effect("Teleport Player out of Store", "teleport") { Description = "Teleports the Player over the street", Category = "Player"},
-                new Effect("Remove All The Cards", "takecards") { Description = "Take EVERY card from the player", Category = "Player"},
-                new Effect("Take away their Item", "takeitem") { Description = "Take a Random Item from the player", Category = "Player"},
                 new Effect("Give $100", "give_100") { Description = "Give the Player $100", Category = "Money"},
                 new Effect("Give $1000", "give_1000") { Description = "Give the Player $1000", Category = "Money"},
                 new Effect("Give $10000", "give_10000") { Description = "Give The Player $10000", Category = "Money"},
