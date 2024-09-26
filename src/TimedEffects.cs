@@ -157,6 +157,22 @@ namespace BepinControl
                             });
                             break;
                         }
+                        case TimedType.WORKERS_FAST:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                try
+                                {
+                                    TestMod.WorkersFast = false;
+                                }
+                                catch (Exception e)
+                                {
+                                    TestMod.mls.LogInfo(e.ToString());
+                                    Timed.removeEffect(etype);
+                                }
+                            });
+                            break;
+                        }
                 }
             } catch(Exception e)
             {
