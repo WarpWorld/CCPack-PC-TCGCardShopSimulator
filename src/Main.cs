@@ -5,6 +5,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 using System.Threading;
 using UnityEngine.EventSystems;
+using System.CodeDom;
 
 
 
@@ -107,6 +108,16 @@ namespace BepinControl
             static void Postfix(bool hasFocus)
             {
                 isFocused = hasFocus;
+            }
+        }
+
+        [HarmonyPatch(typeof(Customer), "OnCashTaken")]
+        public static class doPaymentPatch
+        {
+            public static void prefix(bool isCard)
+            {
+                if(ForceUseCash) { isCard = false; return; }
+                if(ForceUseCredit) { isCard = true; return; }
             }
         }
             

@@ -7,7 +7,7 @@
     <ProjectGuid>{D4F6B961-E8AE-4E4B-950C-37644E42D4CA}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LethalCompanyTestMod</RootNamespace>
+    <RootNamespace>BepinControl</RootNamespace>
     <AssemblyName>CrowdControl</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

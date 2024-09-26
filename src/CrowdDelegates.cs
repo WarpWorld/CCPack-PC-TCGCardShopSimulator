@@ -185,35 +185,17 @@ namespace BepinControl
 
             if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
-            if (InteractableCashierCounter.FindObjectOfType<InteractableCashierCounter>().IsMannedByPlayer() == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Better state check, still runs if the player leaves the checkout, but only starts if there
             
             List<Customer> cust = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
-            foreach (Customer cus in cust)
+            foreach(Customer c in cust)
             {
-                if (TestMod.ForceUseCash == true && cus.m_CurrentState == ECustomerState.ReadyToPay)
+                if(c.m_CustomerCash.gameObject.activeSelf == true)
                 {
-                    cus.m_CustomerCash.SetIsCard(false);
-                    cus.m_CustomerCash.gameObject.SetActive(true);
-                    cus.m_Anim.SetBool("HandingOverCash", true);
-                    InteractableCashierCounter m_CurrentQueueCashierCounter = (InteractableCashierCounter)getProperty(CSingleton<InteractableCard3d>.Instance, "m_CurrentQueueCashierCounter");
-                    float itemCost = (float)getProperty(Customer.FindObjectOfType<Customer>(), "m_TotalScannedItemCost");
-                    float randomPrice = (float)callAndReturnFunc(Customer.FindObjectOfType<Customer>(), "GetRandomPayAmount", itemCost);
-                    m_CurrentQueueCashierCounter.SetCustomerPaidAmount(false, randomPrice);
-                    TestMod.mls.LogInfo("We should be forcing Cash");
-                }
-                if (TestMod.ForceUseCredit == true && cus.m_CurrentState == ECustomerState.ReadyToPay)
-                {
-                    cus.m_CustomerCash.SetIsCard(true);
-                    cus.m_CustomerCash.gameObject.SetActive(true);
-                    cus.m_Anim.SetBool("HandingOverCash", true);
-                    InteractableCashierCounter m_CurrentQueueCashierCounter = (InteractableCashierCounter)getProperty(CSingleton<InteractableCard3d>.Instance, "m_CurrentQueueCashierCounter");
-                    float itemCost = (float)getProperty(Customer.FindObjectOfType<Customer>(), "m_TotalScannedItemCost");
-                    float randomPrice = (float)callAndReturnFunc(Customer.FindObjectOfType<Customer>(), "GetRandomPayAmount", itemCost);
-                    m_CurrentQueueCashierCounter.SetCustomerPaidAmount(false, randomPrice);
-                    TestMod.mls.LogInfo("We should be forcing Cards");
+                    if(TestMod.ForceUseCredit) c.m_CustomerCash.m_IsCard = true;
+                    if (TestMod.ForceUseCash) c.m_CustomerCash.m_IsCard = false;
                 }
             }
-
             string paymentType = req.code.Split('_')[1];
 
             if (paymentType == "cash") new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_CASH, dur * 1000).Run).Start();
