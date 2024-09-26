@@ -65,6 +65,8 @@ namespace BepinControl
                 {"upgradestore", CrowdDelegates.UpgradeStore },
                 {"teleport", CrowdDelegates.TeleportPlayer },
                 {"forcemath", CrowdDelegates.ForceMath },
+                {"forcepayment_cash", CrowdDelegates.ForcePaymentType},
+                {"forcepayment_card", CrowdDelegates.ForcePaymentType},
                 {"give_100", CrowdDelegates.GiveMoney },
                 {"give_1000", CrowdDelegates.GiveMoney },
                 {"give_10000", CrowdDelegates.GiveMoney },

@@ -34,6 +34,8 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new Effect("Take $100", "take_100") { Description = "Take away $100 from the Player", Category = "Money"},
                 new Effect("Take $1000", "take_1000") { Description = "Take Away $1000 from the Player", Category = "Money"},
                 new Effect("Take $10000", "take_10000") { Description = "Take Away $10000 from the Player", Category = "Money"},
+                new Effect("Force Cash Only", "forcepayment_cash") { Description = "Force all customers to pay with cash only.", Duration = 60, Category = "Payments"},
+                new Effect("Force Card Only", "forcepayment_card") { Description = "Force all customers to pay with card only.", Duration = 60, Category = "Payments"},
                 new Effect("Give 32 Common Packs", "give_common_pack_(32)") { Description = "Send the player a Common Pack (32)", Category = "Items"},
                 new Effect("Give 64 Common Packs", "give_common_pack_(64)") { Description = "Send the player a Common Pack (64)", Category = "Items"},
                 new Effect("Give Playmat (Drilceros)", "give_playmat_(drilceros)") { Description = "Send the player a Drilceros Playmat", Category = "Items"},

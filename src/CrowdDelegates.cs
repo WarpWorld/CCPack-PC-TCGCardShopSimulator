@@ -1,6 +1,8 @@
 ﻿
+using DG.Tweening;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using TMPro;
@@ -131,6 +133,61 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_MATH, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+        public static CrowdResponse ForcePaymentType(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+
+            if (TimedThread.isRunning(TimedType.FORCE_CASH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (TimedThread.isRunning(TimedType.FORCE_CARD)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            if (InteractableCashierCounter.FindObjectOfType<InteractableCashierCounter>().IsMannedByPlayer() == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            
+            List<Customer> cust = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
+            foreach (Customer cus in cust)
+            {
+                int itemScannedCount = (int)getProperty(CSingleton<Customer>.Instance, "m_ItemScannedCount");
+                List<Item> itemInBagCount = (List<Item>)getProperty(CSingleton<Customer>.Instance, "m_ItemInBagList");
+                List<InteractableCard3d> itemInBagListCount = (List<InteractableCard3d>)getProperty(CSingleton<Customer>.Instance, "m_CardInBagList");
+                if (itemScannedCount >= itemInBagCount.Count + itemInBagListCount.Count)
+                {
+                    if (TestMod.ForceUseCash) 
+                    {
+                        TestMod.mls.LogInfo("We should be forcing Cash");
+                        cus.m_CustomerCash.SetIsCard(false);
+                        cus.m_CustomerCash.gameObject.SetActive(true);
+                        cus.m_Anim.SetBool("HandingOverCash", true);
+                        InteractableCashierCounter m_CurrentQueueCashierCounter =(InteractableCashierCounter)getProperty(CSingleton<InteractableCard3d>.Instance, "m_CurrentQueueCashierCounter");
+                        float itemCost = (float)getProperty(Customer.FindObjectOfType<Customer>(), "m_TotalScannedItemCost");
+                        float randomPrice = (float)callAndReturnFunc(Customer.FindObjectOfType<Customer>(), "GetRandomPayAmount", itemCost);
+                        m_CurrentQueueCashierCounter.SetCustomerPaidAmount(false, randomPrice) ;
+                    }
+                    if (TestMod.ForceUseCredit) { cus.m_CustomerCash.SetIsCard(true); }
+                }
+            }
+
+            string paymentType = req.code.Split('_')[1];
+
+            if (paymentType == "cash") new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_CASH, dur * 1000).Run).Start();
+            if (paymentType == "card") new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_CARD, dur * 1000).Run).Start();
+
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+        public static CrowdResponse WorkersSpeedy(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if(req.duration > 0) dur = req.duration / 1000;
+
+            if (TimedThread.isRunning(TimedType.WORKERS_FAST)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            Worker.FindObjectOfType<Worker>().SetExtraSpeedMultiplier(5);
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.WORKERS_FAST, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
         public static CrowdResponse GiveMoney(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -239,7 +296,6 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    TestMod.WareHouseRoomsUnlocked++;
                     UnlockRoomManager.Instance.StartUnlockNextWarehouseRoom();
                 });
             }
@@ -260,7 +316,6 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    TestMod.ShopRoomUnlocked++;
                     UnlockRoomManager.Instance.StartUnlockNextRoom();
                 });
             }

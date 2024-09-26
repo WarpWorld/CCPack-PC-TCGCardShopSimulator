@@ -27,6 +27,9 @@ namespace BepinControl
         public static bool isFocused = true;
         public static bool doneItems = false;
         public static bool ForceMath = false;
+        public static bool WorkersFast = false;
+        public static bool ForceUseCash = false;
+        public static bool ForceUseCredit = false;
         public static bool isWarehouseUnlocked = false;
         public static int WareHouseRoomsUnlocked = 0;
         public static int ShopRoomUnlocked = 0;
@@ -106,8 +109,7 @@ namespace BepinControl
                 isFocused = hasFocus;
             }
         }
-
-
+            
     }
 
 }

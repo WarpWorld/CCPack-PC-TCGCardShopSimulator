@@ -26,7 +26,8 @@ namespace BepinControl
         FORCE_EXACT_CHANGE,
         FORCE_REQUIRE_CHANGE,
         FORCE_LARGE_BILLS,
-        ALLOW_MISCHARGE
+        ALLOW_MISCHARGE,
+        WORKERS_FAST
     }
 
 
@@ -70,6 +71,32 @@ namespace BepinControl
                         });
                         break;
                     }
+                case TimedType.WORKERS_FAST:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            TestMod.WorkersFast = true;
+                        });
+                        break;
+                    }
+                case TimedType.FORCE_CASH:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            TestMod.ForceUseCredit = false;
+                            TestMod.ForceUseCash = true;
+                        });
+                        break;
+                    }
+                case TimedType.FORCE_CARD:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            TestMod.ForceUseCash = false;
+                            TestMod.ForceUseCredit = true;
+                        });
+                        break;
+                    }
             }
         }
 
@@ -78,7 +105,59 @@ namespace BepinControl
         {
             try
             {
-                
+                switch(etype)
+                {
+                    case TimedType.FORCE_CASH:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                try
+                                {
+                                    TestMod.ForceUseCredit = false;
+                                    TestMod.ForceUseCash = false;
+                                }
+                                catch (Exception e)
+                                {
+                                    TestMod.mls.LogInfo(e.ToString());
+                                    Timed.removeEffect(etype);
+                                }
+                            });
+                            break;
+                        }
+                    case TimedType.FORCE_CARD:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                try
+                                {
+                                    TestMod.ForceUseCash = false;
+                                    TestMod.ForceUseCredit = false;
+                                }
+                                catch (Exception e)
+                                {
+                                    TestMod.mls.LogInfo(e.ToString());
+                                    Timed.removeEffect(etype);
+                                }
+                            });
+                            break;
+                        }
+                    case TimedType.FORCE_MATH:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                try
+                                {
+                                    TestMod.ForceMath = false;
+                                }
+                                catch (Exception e)
+                                {
+                                    TestMod.mls.LogInfo(e.ToString());
+                                    Timed.removeEffect(etype);
+                                }
+                            });
+                            break;
+                        }
+                }
             } catch(Exception e)
             {
                 TestMod.mls.LogInfo(e.ToString());
