@@ -76,7 +76,48 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     Customer Smelly = CM.GetNewCustomer();
-                    if(Smelly != null) Smelly.SetSmelly();
+                    if (Smelly != null) Smelly.SetSmelly();
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
+        public static CrowdResponse AllSmellyCustomers(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            List<Customer> customers = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
+            CustomerManager customerManager = CSingleton<CustomerManager>.Instance;
+            TestMod.mls.LogInfo($"Customers?");
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+
+                    if (customers == null)
+                    {
+                        TestMod.mls.LogInfo("Customer list not found.");
+                        return;
+                    }
+
+                    // Loop through the customer list and add each customer to the smelly customer list
+                    foreach (Customer customer in customers)
+                    {
+                        if (customer.isActiveAndEnabled)
+                        {
+                            TestMod.mls.LogInfo($"Customer?" + customer.name);
+                            customerManager.AddToSmellyCustomerList(customer);
+                            customer.SetSmelly();
+                        }
+                    }
+
                 });
             }
             catch (Exception e)
@@ -149,23 +190,27 @@ namespace BepinControl
             List<Customer> cust = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
             foreach (Customer cus in cust)
             {
-                int itemScannedCount = (int)getProperty(CSingleton<Customer>.Instance, "m_ItemScannedCount");
-                List<Item> itemInBagCount = (List<Item>)getProperty(CSingleton<Customer>.Instance, "m_ItemInBagList");
-                List<InteractableCard3d> itemInBagListCount = (List<InteractableCard3d>)getProperty(CSingleton<Customer>.Instance, "m_CardInBagList");
-                if (itemScannedCount >= itemInBagCount.Count + itemInBagListCount.Count)
+                if (TestMod.ForceUseCash == true && cus.m_CurrentState == ECustomerState.ReadyToPay)
                 {
-                    if (TestMod.ForceUseCash) 
-                    {
-                        TestMod.mls.LogInfo("We should be forcing Cash");
-                        cus.m_CustomerCash.SetIsCard(false);
-                        cus.m_CustomerCash.gameObject.SetActive(true);
-                        cus.m_Anim.SetBool("HandingOverCash", true);
-                        InteractableCashierCounter m_CurrentQueueCashierCounter =(InteractableCashierCounter)getProperty(CSingleton<InteractableCard3d>.Instance, "m_CurrentQueueCashierCounter");
-                        float itemCost = (float)getProperty(Customer.FindObjectOfType<Customer>(), "m_TotalScannedItemCost");
-                        float randomPrice = (float)callAndReturnFunc(Customer.FindObjectOfType<Customer>(), "GetRandomPayAmount", itemCost);
-                        m_CurrentQueueCashierCounter.SetCustomerPaidAmount(false, randomPrice) ;
-                    }
-                    if (TestMod.ForceUseCredit) { cus.m_CustomerCash.SetIsCard(true); }
+                    cus.m_CustomerCash.SetIsCard(false);
+                    cus.m_CustomerCash.gameObject.SetActive(true);
+                    cus.m_Anim.SetBool("HandingOverCash", true);
+                    InteractableCashierCounter m_CurrentQueueCashierCounter = (InteractableCashierCounter)getProperty(CSingleton<InteractableCard3d>.Instance, "m_CurrentQueueCashierCounter");
+                    float itemCost = (float)getProperty(Customer.FindObjectOfType<Customer>(), "m_TotalScannedItemCost");
+                    float randomPrice = (float)callAndReturnFunc(Customer.FindObjectOfType<Customer>(), "GetRandomPayAmount", itemCost);
+                    m_CurrentQueueCashierCounter.SetCustomerPaidAmount(false, randomPrice);
+                    TestMod.mls.LogInfo("We should be forcing Cash");
+                }
+                if (TestMod.ForceUseCredit == true && cus.m_CurrentState == ECustomerState.ReadyToPay)
+                {
+                    cus.m_CustomerCash.SetIsCard(true);
+                    cus.m_CustomerCash.gameObject.SetActive(true);
+                    cus.m_Anim.SetBool("HandingOverCash", true);
+                    InteractableCashierCounter m_CurrentQueueCashierCounter = (InteractableCashierCounter)getProperty(CSingleton<InteractableCard3d>.Instance, "m_CurrentQueueCashierCounter");
+                    float itemCost = (float)getProperty(Customer.FindObjectOfType<Customer>(), "m_TotalScannedItemCost");
+                    float randomPrice = (float)callAndReturnFunc(Customer.FindObjectOfType<Customer>(), "GetRandomPayAmount", itemCost);
+                    m_CurrentQueueCashierCounter.SetCustomerPaidAmount(false, randomPrice);
+                    TestMod.mls.LogInfo("We should be forcing Cards");
                 }
             }
 
@@ -176,6 +221,55 @@ namespace BepinControl
 
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+
+        public static CrowdResponse InvertX(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+            TestMod.mls.LogInfo($"running");
+
+            if (TimedThread.isRunning(TimedType.INVERT_X)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.INVERT_X, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+
+        public static CrowdResponse InvertY(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+            if (TimedThread.isRunning(TimedType.INVERT_Y)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.INVERT_Y, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+
+        public static CrowdResponse HighFOV(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+
+            if (TimedThread.isRunning(TimedType.HIGH_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (TimedThread.isRunning(TimedType.LOW_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.HIGH_FOV, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+
+        public static CrowdResponse LowFOV(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+            if (TimedThread.isRunning(TimedType.HIGH_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (TimedThread.isRunning(TimedType.LOW_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.LOW_FOV, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+
         public static CrowdResponse WorkersSpeedy(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -183,7 +277,6 @@ namespace BepinControl
 
             if (TimedThread.isRunning(TimedType.WORKERS_FAST)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
-            Worker.FindObjectOfType<Worker>().SetExtraSpeedMultiplier(5);
 
             new Thread(new TimedThread(req.GetReqID(), TimedType.WORKERS_FAST, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);

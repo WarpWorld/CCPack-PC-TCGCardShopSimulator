@@ -169,6 +169,10 @@ namespace BepinControl
                 {"give_playmat_(wind)", CrowdDelegates.GiveItem },
                 {"give_playmat_(lunight)", CrowdDelegates.GiveItem },
                 {"give_playmat_(water)", CrowdDelegates.GiveItem },
+                {"highfov", CrowdDelegates.HighFOV},
+                {"lowfov", CrowdDelegates.LowFOV},
+                {"invertx", CrowdDelegates.InvertX},
+                {"inverty", CrowdDelegates.InvertY},
             };
         }
 

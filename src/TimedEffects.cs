@@ -71,14 +71,6 @@ namespace BepinControl
                         });
                         break;
                     }
-                case TimedType.WORKERS_FAST:
-                    {
-                        TestMod.ActionQueue.Enqueue(() =>
-                        {
-                            TestMod.WorkersFast = true;
-                        });
-                        break;
-                    }
                 case TimedType.FORCE_CASH:
                     {
                         TestMod.ActionQueue.Enqueue(() =>
@@ -94,6 +86,51 @@ namespace BepinControl
                         {
                             TestMod.ForceUseCash = false;
                             TestMod.ForceUseCredit = true;
+                        });
+                        break;
+                    }
+                case TimedType.WORKERS_FAST:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            Worker worker = CSingleton<Worker>.Instance;
+                            worker.SetExtraSpeedMultiplier(4);
+                        });
+                        break;
+                    }
+                case TimedType.HIGH_FOV:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            CameraFOVControl CFOV = CSingleton<CameraFOVControl>.Instance;
+                            CFOV.UpdateFOV(140f);
+                        });
+                        break;
+                    }
+                case TimedType.LOW_FOV:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
+                            camera.UpdateFOV(10f);
+                        });
+                        break;
+                    }
+                case TimedType.INVERT_X:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
+                            IPC.m_CameraMouseInput.invertVerticalInput = true;
+                        });
+                        break;
+                    }
+                case TimedType.INVERT_Y:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
+                            IPC.m_CameraMouseInput.invertHorizontalInput = true;
                         });
                         break;
                     }
@@ -161,15 +198,44 @@ namespace BepinControl
                         {
                             TestMod.ActionQueue.Enqueue(() =>
                             {
-                                try
-                                {
-                                    TestMod.WorkersFast = false;
-                                }
-                                catch (Exception e)
-                                {
-                                    TestMod.mls.LogInfo(e.ToString());
-                                    Timed.removeEffect(etype);
-                                }
+                                Worker worker = CSingleton<Worker>.Instance;
+                                worker.SetExtraSpeedMultiplier(1);
+                            });
+                            break;
+                        }
+                    case TimedType.HIGH_FOV:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
+                                camera.UpdateFOV(40f);
+                            });
+                            break;
+                        }
+                    case TimedType.LOW_FOV:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
+                                camera.UpdateFOV(40f);
+                            });
+                            break;
+                        }
+                    case TimedType.INVERT_X:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
+                                IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
+                            });
+                            break;
+                        }
+                    case TimedType.INVERT_Y:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
+                                IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
                             });
                             break;
                         }
