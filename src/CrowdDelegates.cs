@@ -100,7 +100,6 @@ namespace BepinControl
 
                     if (req.targets != null)
                     {
-
                         if (req.targets[0].service == "twitch") {
                             TestMod.twitchChannel = req.targets[0].name;
                         }

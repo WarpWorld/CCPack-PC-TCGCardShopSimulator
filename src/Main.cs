@@ -10,6 +10,8 @@ using TMPro;
 using System.Net.Sockets;
 using System.IO;
 using System.Linq;
+using UnityEngine.Localization.Pseudo;
+using UnityEngine.UI;
 
 namespace BepinControl
 {
@@ -42,7 +44,8 @@ namespace BepinControl
         public static string NewLanguage = "";
 
         public static bool isIrcConnected = false;
-        private static bool isChatConnected = false; 
+        private static bool isChatConnected = false;
+        private static bool isTwitchChatAllowed = true;
         private const string twitchServer = "irc.chat.twitch.tv";
         private const int twitchPort = 6667;
         private const string twitchUsername = "justinfan1337"; 
@@ -51,6 +54,10 @@ namespace BepinControl
         private static NetworkStream twitchStream;
         private static StreamReader twitchReader;
         private static StreamWriter twitchWriter;
+
+        private static TextMeshPro chatStatusText;
+
+
 
         void Awake()
         {
@@ -61,9 +68,10 @@ namespace BepinControl
             harmony.PatchAll(typeof(TestMod));
             harmony.PatchAll();
             CustomerManagerPatches.ApplyPatches(harmony);
+            
 
             mls.LogInfo($"Initializing Crowd Control");
-
+            
             try
             {
                 client = new ControlClient();
@@ -77,6 +85,61 @@ namespace BepinControl
             }
 
             mls.LogInfo($"Crowd Control Initialized");
+        
+        }
+
+        private static GameObject currentTextObject = null;
+        private static void CreateChatStatusText(string message)
+        {
+            if (currentTextObject != null)
+            {
+                UnityEngine.Object.Destroy(currentTextObject);
+            }
+
+            currentTextObject = new GameObject("ChatStatusText");
+            TextMeshPro chatStatusText = currentTextObject.AddComponent<TextMeshPro>();
+
+            chatStatusText.fontSize = 0.05f;
+            chatStatusText.color = new Color(0.5f, 0, 1); 
+            chatStatusText.alignment = TextAlignmentOptions.Center;
+            chatStatusText.text = message;
+            chatStatusText.lineSpacing = 1.2f; 
+
+     
+            Camera cam = FindObjectOfType<Camera>();
+            Vector3 screenCenterPosition = cam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0.2f));
+            currentTextObject.transform.position = screenCenterPosition; 
+
+   
+            currentTextObject.transform.SetParent(cam.transform, true);
+            currentTextObject.AddComponent<FaceCamera>();
+
+            UnityEngine.Object.Destroy(currentTextObject, 3f);
+        }
+
+        public class FaceCamera : MonoBehaviour
+        {
+            private Camera mainCamera;
+
+            void Start()
+            {
+                mainCamera = Camera.main;
+
+                if (mainCamera == null)
+                {
+                    mainCamera = FindObjectOfType<Camera>();
+                }
+            }
+
+            void LateUpdate()
+            {
+                if (mainCamera == null) return;
+
+                Vector3 directionToCamera = mainCamera.transform.position - transform.position;
+                directionToCamera.y = 0; 
+                Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
+                transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0); 
+            }
         }
 
         public static Queue<Action> ActionQueue = new Queue<Action>();
@@ -102,7 +165,6 @@ namespace BepinControl
                 // Request membership and tags capabilities from Twitch
                 twitchWriter.WriteLine("CAP REQ :twitch.tv/membership twitch.tv/tags");
 
-                // Send authentication credentials
                 twitchWriter.WriteLine($"NICK {twitchUsername}");
                 twitchWriter.WriteLine($"JOIN #{twitchChannel}");
                 twitchWriter.Flush();
@@ -116,7 +178,7 @@ namespace BepinControl
                         var message = twitchReader.ReadLine();
                         if (message != null)
                         {
-                            // Log the PING message to keep connection alive
+     
                             if (message.StartsWith("PING"))
                             {
                                 twitchWriter.WriteLine("PONG :tmi.twitch.tv");
@@ -127,7 +189,7 @@ namespace BepinControl
                                 var splitMessage = message.Split(new[] { ' ' }, 4);
                                 if (splitMessage.Length >= 4)
                                 {
-                                    var tagsPart = splitMessage[0]; // This part contains tags
+                                    var tagsPart = splitMessage[0];
                                     var rawUsername = splitMessage[1];
                                     string username = rawUsername.Substring(1, rawUsername.IndexOf('!') - 1);
                                     string chatMessage = splitMessage[3].Substring(1);
@@ -167,7 +229,6 @@ namespace BepinControl
                         }
                     }
 
-                    // Sleep to prevent overwhelming the CPU
                     Thread.Sleep(50);
                 }
             }
@@ -177,7 +238,42 @@ namespace BepinControl
             }
         }
 
-        // Helper method to parse the badges from the message tags
+        public static void DisconnectFromTwitch()
+        {
+            try
+            {
+                if (twitchWriter != null)
+                {
+                    // Send a PART command to leave the Twitch channel
+                    twitchWriter.WriteLine("PART #jaku");
+                    twitchWriter.Flush();
+                    twitchWriter.Close();
+                }
+
+                if (twitchReader != null)
+                {
+                    twitchReader.Close();
+                }
+
+                if (twitchStream != null)
+                {
+                    twitchStream.Close();
+                }
+
+                if (twitchTcpClient != null)
+                {
+                    twitchTcpClient.Close();
+                }
+
+                mls.LogInfo("Disconnected from Twitch chat.");
+            }
+            catch (Exception e)
+            {
+                mls.LogError($"Error disconnecting from Twitch: {e.Message}");
+            }
+        }
+
+
         public static HashSet<string> ParseBadges(string tagsPart)
         {
             var badgesSet = new HashSet<string>();
@@ -200,11 +296,37 @@ namespace BepinControl
         }
 
 
+
+ 
+
         //attach this to some game class with a function that runs every frame like the player's Update()
         [HarmonyPatch(typeof(CGameManager), "Update")]
         [HarmonyPrefix]
         static void RunEffects()
         {
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F6)) // Make sure to use UnityEngine.Input
+            {
+                isTwitchChatAllowed = !isTwitchChatAllowed;
+                if (isChatConnected)
+                {
+                    DisconnectFromTwitch();
+                    isChatConnected = false;
+                }
+
+                if(isTwitchChatAllowed)
+                {
+                    TestMod.mls.LogInfo("Twitch Chat is enabled.");
+                    CreateChatStatusText("Twitch Chat is enabled.");
+                }
+                else
+                {
+                    TestMod.mls.LogInfo("Twitch Chat is disabled.");
+                    CreateChatStatusText("Twitch Chat is disabled.");
+                }
+
+            }
+
+
             if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
             {
                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
