@@ -100,7 +100,6 @@ namespace BepinControl
 
                     if (req.targets != null)
                     {
-
                         if (req.targets[0].service == "twitch") {
                             TestMod.twitchChannel = req.targets[0].name;
                         }
@@ -110,7 +109,6 @@ namespace BepinControl
                     Customer newCustomer = CM.GetNewCustomer();
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
-                    TestMod.mls.LogInfo($"Crowd Control Error: {req.targets.ToString()}");
 
                 });
             }
@@ -251,12 +249,16 @@ namespace BepinControl
             int dur = 30;
             if (req.duration > 0) dur = req.duration / 1000;
 
+            
+            if (TestMod.ForceMath || TimedThread.isRunning(TimedType.FORCE_MATH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
-            if (TimedThread.isRunning(TimedType.FORCE_MATH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
-            UI_CashCounterScreen ui_CashCounterScreen = CSingleton<UI_CashCounterScreen>.Instance;
-            TextMeshProUGUI text = (TextMeshProUGUI)getProperty(ui_CashCounterScreen, "m_ChangeToGiveAmountText");
-            text.text = "DO THE MATH";
+            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+ 
+            TestMod.ForceMath = true;
 
             new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_MATH, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
