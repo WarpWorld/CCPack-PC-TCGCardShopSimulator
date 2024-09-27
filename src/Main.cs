@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using System.Threading;
 using UnityEngine.EventSystems;
+using System.CodeDom;
+using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
+using System.Runtime.CompilerServices;
 
 
 
@@ -111,6 +114,10 @@ namespace BepinControl
                 isFocused = hasFocus;
             }
         }
+
+
+
+
         [HarmonyPatch(typeof(InteractableCustomerCash), "SetIsCard")]
         public static class SetIsCardPatch
         {
@@ -151,6 +158,10 @@ namespace BepinControl
 
             }
         }
+
+
+
+
     }
 
 }
