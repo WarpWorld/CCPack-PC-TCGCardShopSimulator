@@ -51,7 +51,6 @@ namespace BepinControl
 
             List<Customer> customers = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
             CustomerManager customerManager = CSingleton<CustomerManager>.Instance;
-            TestMod.mls.LogInfo($"Customers?");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -97,12 +96,21 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    Customer newCustomer = CM.GetNewCustomer();
-                    if (newCustomer != null)
+                    
+
+                    if (req.targets != null)
                     {
-                        TestMod.NameOverride = req.viewer;
-                        TestMod.isSmelly = false;
+
+                        if (req.targets[0].service == "twitch") {
+                            TestMod.twitchChannel = req.targets[0].name;
+                        }
                     }
+                    TestMod.NameOverride = req.viewer;
+                    TestMod.isSmelly = false;
+                    Customer newCustomer = CM.GetNewCustomer();
+                    TestMod.NameOverride = "";
+                    newCustomer.name = req.viewer;
+                    TestMod.mls.LogInfo($"Crowd Control Error: {req.targets.ToString()}");
 
                 });
             }
@@ -126,13 +134,25 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
+
+                    if (req.targets != null)
+                    {
+
+                        if (req.targets[0].service == "twitch")
+                        {
+                            TestMod.twitchChannel = req.targets[0].name;
+                        }
+                    }
+                    TestMod.isSmelly = true;
+                    TestMod.NameOverride = req.viewer;
                     Customer Smelly = CM.GetNewCustomer();
                     if (Smelly != null)
                     {
                         Smelly.SetSmelly();
-                        TestMod.isSmelly = true;
-                        TestMod.NameOverride = req.viewer;
+                        Smelly.name = req.viewer;
                     }
+                    TestMod.isSmelly = false;
+
 
                 });
             }
