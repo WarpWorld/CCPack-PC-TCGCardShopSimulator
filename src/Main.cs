@@ -35,6 +35,8 @@ namespace BepinControl
         public static int WareHouseRoomsUnlocked = 0;
         public static int ShopRoomUnlocked = 0;
         public static string NameOverride = "";
+        public static string OrgLanguage = "";
+        public static string NewLanguage = "";
 
         void Awake()
         {

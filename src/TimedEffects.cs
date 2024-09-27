@@ -1,6 +1,8 @@
-﻿using System;
+﻿using I2.Loc;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 
 namespace BepinControl
@@ -63,6 +65,15 @@ namespace BepinControl
         {
             switch (type)
             {
+                case TimedType.SET_LANGUAGE:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            string newLang = TestMod.NewLanguage;
+                            SettingScreen.Instance.OnPressLanguageSelect(newLang);
+                        });
+                        break;
+                    }
                 case TimedType.FORCE_MATH:
                     {
                         TestMod.ActionQueue.Enqueue(() =>
@@ -236,6 +247,15 @@ namespace BepinControl
                             {
                                 InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
                                 IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
+                            });
+                            break;
+                        }
+                    case TimedType.SET_LANGUAGE:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                string oldLang = TestMod.OrgLanguage;
+                                SettingScreen.Instance.OnPressLanguageSelect(oldLang);
                             });
                             break;
                         }

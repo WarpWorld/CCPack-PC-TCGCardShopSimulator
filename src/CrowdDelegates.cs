@@ -1,5 +1,7 @@
 ﻿
 using DG.Tweening;
+using DG.Tweening.Core.Easing;
+using I2.Loc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -215,7 +217,106 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.INVERT_X, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+        public static CrowdResponse SetLanguage(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
 
+            SettingScreen SS = CSingleton<SettingScreen>.Instance;
+            string currentLanguage = LocalizationManager.CurrentLanguage;
+
+            string language = req.code.Split('_')[1];
+            string newLanguage = "";
+            switch (language)
+            {
+                case "english":
+                    {
+                        newLanguage = "English";
+                        break;
+                    }
+                case "french":
+                    {
+                        newLanguage = "France";
+                        break;
+                    }
+                case "german":
+                    {
+                        newLanguage = "Germany";
+                        break;
+                    }
+                case "italian":
+                    {
+                        newLanguage = "Italian";
+                        break;
+                    }
+                case "spanish":
+                    {
+                        newLanguage = "Spanish";
+                        break;
+                    }
+                case "portuguese":
+                    {
+                        newLanguage = "Portuguese";
+                        break;
+                    }
+                case "chineset":
+                    {
+                        newLanguage = "ChineseT";
+                        break;
+                    }
+                case "chineses":
+                    {
+                        newLanguage = "ChineseS";
+                        break;
+                    }
+                case "korean":
+                    {
+                        newLanguage = "Korean";
+                        break;
+                    }
+                case "japanese":
+                    {
+                        newLanguage = "Japanese";
+                        break;
+                    }
+                case "russian":
+                    {
+                        newLanguage = "Russian";
+                        break;
+                    }
+                case "hindi":
+                    {
+                        newLanguage = "Hindi";
+                        break;
+                    }
+                case "thai":
+                    {
+                        newLanguage = "Thai";
+                        break;
+                    }
+                case "arabic":
+                    {
+                        newLanguage = "Arabic";
+                        break;
+                    }
+                case "dutch":
+                    {
+                        newLanguage = "Dutch";
+                        break;
+                    }
+            };
+
+
+            if (currentLanguage == newLanguage) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "");
+            if (TimedThread.isRunning(TimedType.SET_LANGUAGE)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            TestMod.NewLanguage = newLanguage;
+            TestMod.OrgLanguage = currentLanguage;
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.SET_LANGUAGE, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+
+        }
         public static CrowdResponse InvertY(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
