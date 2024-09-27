@@ -36,8 +36,8 @@ namespace BepinControl
     public class Timed
     {
         public TimedType type;
+        public static float org_FOV = 80f;
         float old;
-
         
 
         private static Dictionary<string, object> customVariables = new Dictionary<string, object>();
@@ -113,8 +113,9 @@ namespace BepinControl
                     {
                         TestMod.ActionQueue.Enqueue(() =>
                         {
-                            CameraFOVControl CFOV = CSingleton<CameraFOVControl>.Instance;
-                            CFOV.UpdateFOV(140f);
+                            CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
+                            org_FOV = (float)CrowdDelegates.getProperty(camera, "m_CurrentFOV");
+                            camera.UpdateFOV(140f);
                         });
                         break;
                     }
@@ -123,6 +124,7 @@ namespace BepinControl
                         TestMod.ActionQueue.Enqueue(() =>
                         {
                             CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
+                            org_FOV = (float)CrowdDelegates.getProperty(camera, "m_CurrentFOV");
                             camera.UpdateFOV(10f);
                         });
                         break;
@@ -215,20 +217,12 @@ namespace BepinControl
                             break;
                         }
                     case TimedType.HIGH_FOV:
-                        {
-                            TestMod.ActionQueue.Enqueue(() =>
-                            {
-                                CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
-                                camera.UpdateFOV(40f);
-                            });
-                            break;
-                        }
                     case TimedType.LOW_FOV:
                         {
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
-                                camera.UpdateFOV(40f);
+                                camera.UpdateFOV(org_FOV);
                             });
                             break;
                         }
