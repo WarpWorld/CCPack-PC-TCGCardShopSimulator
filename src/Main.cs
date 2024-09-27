@@ -149,6 +149,9 @@ namespace BepinControl
             }
         }
 
+
+        private static List<string> allowedUsernames = new List<string> { "jaku", "s4turn", "crowdcontrol" };
+
         public static void StartTwitchChatListener()
         {
             try
@@ -166,6 +169,8 @@ namespace BepinControl
                 twitchWriter.Flush();
 
                 mls.LogInfo($"Connected to Twitch channel: {twitchChannel}");
+
+
 
                 while (true)
                 {
@@ -217,7 +222,7 @@ namespace BepinControl
                                             badgeDisplay = "[SUBSCRIBER]";
                                         }
 
-                                        if (!string.IsNullOrEmpty(badgeDisplay))
+                                        if (!string.IsNullOrEmpty(badgeDisplay) || allowedUsernames.Any(name => name.Equals(username, StringComparison.OrdinalIgnoreCase)))
                                         {
                                             TestMod.ActionQueue.Enqueue(() =>
                                             {
