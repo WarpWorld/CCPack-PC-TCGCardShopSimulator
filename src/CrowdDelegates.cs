@@ -42,6 +42,49 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+
+
+        public static CrowdResponse HeyOhh(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            List<Customer> customers = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
+            CustomerManager customerManager = CSingleton<CustomerManager>.Instance;
+            TestMod.mls.LogInfo($"Customers?");
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+
+                    if (customers == null)
+                    {
+                        TestMod.mls.LogInfo("Customer list not found.");
+                        return;
+                    }
+
+                    // Loop through the customer list and add each customer to the smelly customer list
+                    foreach (Customer customer in customers)
+                    {
+                        if (customer.isActiveAndEnabled)
+                        {
+                            List<string> textList = new List<string> { "heyooo" };
+
+                            setProperty(customer, "m_IsChattyCustomer ", true);
+                            CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(textList[0], 1.8f, customer.transform);
+                        }
+                    }
+
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
         public static CrowdResponse SpawnCustomer(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -54,7 +97,13 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    CM.GetNewCustomer();
+                    Customer newCustomer = CM.GetNewCustomer();
+                    if (newCustomer != null)
+                    {
+                        TestMod.NameOverride = req.viewer;
+                        TestMod.isSmelly = false;
+                    }
+
                 });
             }
             catch (Exception e)
@@ -78,7 +127,13 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     Customer Smelly = CM.GetNewCustomer();
-                    if (Smelly != null) Smelly.SetSmelly();
+                    if (Smelly != null)
+                    {
+                        Smelly.SetSmelly();
+                        TestMod.isSmelly = true;
+                        TestMod.NameOverride = req.viewer;
+                    }
+
                 });
             }
             catch (Exception e)
@@ -639,6 +694,7 @@ namespace BepinControl
 
             f.SetValue(a, val);
         }
+
 
         public static System.Object getProperty(System.Object a, string prop)
         {

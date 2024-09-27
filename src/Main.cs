@@ -8,6 +8,9 @@ using UnityEngine.EventSystems;
 using System.CodeDom;
 using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
 using System.Runtime.CompilerServices;
+using UnityEngine;
+using TMPro;
+using System.Reflection;
 
 
 
@@ -34,6 +37,7 @@ namespace BepinControl
         public static bool ForceUseCash = false;
         public static bool ForceUseCredit = false;
         public static bool isWarehouseUnlocked = false;
+        public static bool isSmelly = false;
         public static int WareHouseRoomsUnlocked = 0;
         public static int ShopRoomUnlocked = 0;
         public static string NameOverride = "";
@@ -50,6 +54,7 @@ namespace BepinControl
             mls.LogInfo($"Loaded {modGUID}. Patching.");
             harmony.PatchAll(typeof(TestMod));
             harmony.PatchAll();
+            CustomerManagerPatches.ApplyPatches(harmony);
 
             mls.LogInfo($"Initializing Crowd Control");
 
@@ -137,7 +142,6 @@ namespace BepinControl
         }
 
 
-
         [HarmonyPatch(typeof(InteractableCashierCounter), "StartGivingChange")]
         public static class StartGivingChangePatch
         {
@@ -159,6 +163,79 @@ namespace BepinControl
             }
         }
 
+        public class NamePlateController : MonoBehaviour
+        {
+            private Camera mainCamera;
+
+            void Start()
+            {
+                mainCamera = Camera.main;
+
+                if (mainCamera == null)
+                {
+                    mainCamera = FindObjectOfType<Camera>();
+                }
+            }
+
+            void LateUpdate()
+            {
+                if (mainCamera == null) return;
+
+                Vector3 directionToCamera = mainCamera.transform.position - transform.position;
+                directionToCamera.y = 0;
+                Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
+                transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0);
+            }
+        }
+
+        public static class CustomerManagerPatches
+        {
+            public static void ApplyPatches(Harmony harmonyInstance)
+            {
+                var original = typeof(CustomerManager).GetMethod("GetNewCustomer", new Type[] { });
+                var postfix = new HarmonyMethod(typeof(CustomerManagerPatches).GetMethod(nameof(GetNewCustomerPostfix), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
+                harmonyInstance.Patch(original, null, postfix);
+            }
+
+            private static void GetNewCustomerPostfix(Customer __result)
+            {
+                if (__result != null)
+                {
+                    AddNamePlateToCustomer(__result);
+                }
+            }
+
+            private static void AddNamePlateToCustomer(Customer customer)
+            {
+
+                if (customer.transform.Find("NamePlate") != null)
+                {
+                    return;
+                }
+
+                string chatterName = NameOverride;
+
+
+                if (string.IsNullOrEmpty(chatterName)) return;
+
+                GameObject namePlate = new GameObject("NamePlate");
+                namePlate.transform.SetParent(customer.transform);
+                namePlate.transform.localPosition = Vector3.up * 1.9f; 
+
+                TextMeshPro tmp = namePlate.AddComponent<TextMeshPro>();
+                tmp.text = $"<b>{chatterName}</b>";
+                tmp.alignment = TextAlignmentOptions.Center;
+                tmp.fontSize = 1;
+                tmp.fontMaterial.EnableKeyword("OUTLINE_ON");
+                tmp.outlineColor = Color.black; 
+                tmp.outlineWidth = 0.2f;
+                if (isSmelly) tmp.color = new Color(0.0f, 1.0f, 0.0f);
+                
+
+
+                namePlate.AddComponent<NamePlateController>();
+            }
+        }
 
 
 

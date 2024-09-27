@@ -252,6 +252,9 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new Effect("Set Language to Arabic", "language_arabic") { Description = "Set Language to Arabic.", Duration = 60, Category = "Game Language"},
                 new Effect("Set Language to Dutch", "language_dutch") { Description = "Set Language to Dutch.", Duration = 60, Category = "Game Language"},
 
+                new Effect("Hey Ohhh", "speak_heyoo") { Description = "Speak!", Category = "Speak"},
+
+
         };
     }
 }
