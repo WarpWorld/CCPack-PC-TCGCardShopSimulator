@@ -5,9 +5,6 @@ using BepInEx.Logging;
 using HarmonyLib;
 using System.Threading;
 using UnityEngine.EventSystems;
-using System.CodeDom;
-using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
-using System.Runtime.CompilerServices;
 
 
 
@@ -78,16 +75,16 @@ namespace BepinControl
         [HarmonyPrefix]
         static void RunEffects()
         {
-            if(CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
+            if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
             {
                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
                 {
-                    TestMod.mls.LogInfo(cardPack.name + " : Warehouse Rooms: "+ UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count);
+                    TestMod.mls.LogInfo(cardPack.name + " : Warehouse Rooms: " + UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count);
 
                 }
                 doneItems = true;
             }
-            
+
             while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();
@@ -114,16 +111,46 @@ namespace BepinControl
                 isFocused = hasFocus;
             }
         }
-        [HarmonyPatch(typeof(Customer), "EvaluateFinishScanItem")]
-        public static class DoPaymentChecksPatch
+        [HarmonyPatch(typeof(InteractableCustomerCash), "SetIsCard")]
+        public static class SetIsCardPatch
         {
-            public static void Postfix(Customer __instance)
+            public static void Prefix(ref bool isCard)
             {
-                if (ForceUseCash) foreach (Customer cust in CSingleton<CustomerManager>.Instance.GetCustomerList()) if (cust.m_CurrentState == ECustomerState.ReadyToPay) cust.m_CustomerCash.SetIsCard(false);
-                if (ForceUseCredit) foreach (Customer cust in CSingleton<CustomerManager>.Instance.GetCustomerList()) if (cust.m_CurrentState == ECustomerState.ReadyToPay) cust.m_CustomerCash.SetIsCard(true);
+                if (ForceUseCash)
+                {
+                    isCard = false;
+                    return;
+                }
+                if (ForceUseCredit)
+                {
+                    isCard = true;
+                    return;
+                }
             }
         }
-            
+
+
+
+        [HarmonyPatch(typeof(InteractableCashierCounter), "StartGivingChange")]
+        public static class StartGivingChangePatch
+        {
+
+            public static void Prefix(InteractableCashierCounter __instance, ref bool ___m_IsUsingCard)
+            {
+
+
+                if (ForceUseCash)
+                {
+                    ___m_IsUsingCard = false;
+                }
+
+                if (ForceUseCredit)
+                {
+                    ___m_IsUsingCard = true;
+                }
+
+            }
+        }
     }
 
 }
