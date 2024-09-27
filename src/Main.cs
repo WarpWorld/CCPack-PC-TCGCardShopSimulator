@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine.Localization.Pseudo;
 using UnityEngine.UI;
+using System.Security.Policy;
 
 namespace BepinControl
 {
@@ -386,7 +387,20 @@ namespace BepinControl
         }
 
 
+        [HarmonyPatch(typeof(UI_CashCounterScreen), "UpdateMoneyChangeAmount")] 
+        public class UI_CashCounterScreen_Patch
+        {
+            static void Postfix(UI_CashCounterScreen __instance)
+            {
+                if (!ForceMath) return;
+                TextMeshProUGUI text = __instance.m_ChangeToGiveAmountText;
 
+                if (text != null)
+                {
+                    text.text = "DO THE MATH";
+                }
+            }
+        }
 
         [HarmonyPatch(typeof(InteractableCustomerCash), "SetIsCard")]
         public static class SetIsCardPatch
