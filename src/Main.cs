@@ -123,12 +123,8 @@ namespace BepinControl
 
             void Start()
             {
-                mainCamera = Camera.main;
+                mainCamera = Camera.main ?? FindObjectOfType<Camera>();
 
-                if (mainCamera == null)
-                {
-                    mainCamera = FindObjectOfType<Camera>();
-                }
             }
 
             void LateUpdate()
@@ -186,43 +182,63 @@ namespace BepinControl
                             }
                             else if (message.Contains("PRIVMSG"))
                             {
-                                var splitMessage = message.Split(new[] { ' ' }, 4);
-                                if (splitMessage.Length >= 4)
+                                var messageParts = message.Split(new[] { ' ' }, 4);
+                                if (messageParts.Length >= 4)
                                 {
-                                    var tagsPart = splitMessage[0];
-                                    var rawUsername = splitMessage[1];
+                                    var rawUsername = messageParts[1];
                                     string username = rawUsername.Substring(1, rawUsername.IndexOf('!') - 1);
-                                    string chatMessage = splitMessage[3].Substring(1);
-
-                                    var badges = ParseBadges(tagsPart);
-
-                                    if (badges.Contains("subscriber") || badges.Contains("moderator") || badges.Contains("vip") || badges.Contains("broadcaster") )
+                                    int messageStartIndex = message.IndexOf("PRIVMSG");
+                                    if (messageStartIndex >= 0)
                                     {
-                                        //mls.LogInfo($"[{username}] (badges: {badges}): {chatMessage}");
+                                        string chatMessage = messageParts[3].Substring(1);
+                                        string[] chatParts = chatMessage.Split(new[] { " :" }, 2, StringSplitOptions.None);
+                                        chatMessage = chatParts[1];
 
-                                        TestMod.ActionQueue.Enqueue(() =>
+                                        //mls.LogInfo($"chatMessage: {chatMessage}");
+                                        //mls.LogInfo($"username: {username}");
+                                        var badges = ParseBadges(messageParts[0]);
+
+
+                                        string badgeDisplay = "";
+                                        if (badges.Contains("broadcaster"))
                                         {
-                                            List<Customer> customers = (List<Customer>)CrowdDelegates.getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
+                                            badgeDisplay = "[BROADCASTER]";
+                                        }
+                                        else if (badges.Contains("moderator"))
+                                        {
+                                            badgeDisplay = "[MODERATOR]";
+                                        }
+                                        else if (badges.Contains("vip"))
+                                        {
+                                            badgeDisplay = "[VIP]";
+                                        }
+                                        else if (badges.Contains("subscriber"))
+                                        {
+                                            badgeDisplay = "[SUBSCRIBER]";
+                                        }
 
-                                            if (customers.Count >= 1)
+                                        if (!string.IsNullOrEmpty(badgeDisplay))
+                                        {
+                                            TestMod.ActionQueue.Enqueue(() =>
                                             {
-                                                CustomerManager customerManager = CSingleton<CustomerManager>.Instance;
-                                                List<string> textList = new List<string> { chatMessage };
+                                                List<Customer> customers = (List<Customer>)CrowdDelegates.getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
 
-                                                foreach (Customer customer in customers)
+                                                if (customers.Count >= 1)
                                                 {
-                                                    if (customer.isActiveAndEnabled && customer.name.ToLower() == username.ToLower())
+                                                    foreach (Customer customer in customers)
                                                     {
-                                                        CrowdDelegates.setProperty(customer, "m_IsChattyCustomer", true);
-                                                        CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(chatMessage, 1.8f, customer.transform);
+                                                        if (customer.isActiveAndEnabled && customer.name.ToLower() == username.ToLower())
+                                                        {
+                                                            // Construct the message with badge and username
+                                                            //string displayMessage = $"{badgeDisplay} {username}: {chatMessage}";
+
+                                                            // Show the message as a popup
+                                                            CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(chatMessage, 1.8f, customer.transform);
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        });
-                                    }
-                                    else
-                                    {
-                                        mls.LogInfo($"[{username}] does not have the required badges.");
+                                            });
+                                        }
                                     }
                                 }
                             }

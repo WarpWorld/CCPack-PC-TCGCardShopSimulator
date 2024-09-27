@@ -109,7 +109,6 @@ namespace BepinControl
                     Customer newCustomer = CM.GetNewCustomer();
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
-                    TestMod.mls.LogInfo($"Crowd Control Error: {req.targets.ToString()}");
 
                 });
             }
