@@ -114,6 +114,8 @@ namespace BepinControl
                 isFocused = hasFocus;
             }
         }
+        
+        
         [HarmonyPatch(typeof(Customer), "EvaluateFinishScanItem")]
         public static class DoPaymentChecksPatch
         {
@@ -123,7 +125,36 @@ namespace BepinControl
                 if (ForceUseCredit) foreach (Customer cust in CSingleton<CustomerManager>.Instance.GetCustomerList()) if (cust.m_CurrentState == ECustomerState.ReadyToPay) cust.m_CustomerCash.SetIsCard(true);
             }
         }
-            
+
+
+
+
+
+
+        [HarmonyPatch(typeof(InteractableCashierCounter), "StartGivingChange")]
+        public static class StartGivingChangePatch
+        {
+
+            public static void Prefix(InteractableCashierCounter __instance, ref bool ___m_IsUsingCard)
+            {
+
+
+                if (ForceUseCash)
+                {
+                    ___m_IsUsingCard = false;
+                }
+
+                if (ForceUseCredit)
+                {
+                    ___m_IsUsingCard = true;
+                }
+                
+            }
+        }
+
+
+
+
     }
 
 }
