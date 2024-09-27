@@ -143,11 +143,21 @@ namespace BepinControl
                 {
 
 
-                    Transform pos = CSingleton<InteractionPlayerController>.Instance.transform;
+                    Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
                     TestMod.mls.LogInfo($"Player POS: {pos.position}");
                     Vector3 teleportPosition = new Vector3();
 
-                    teleportPosition = new Vector3(15.00f, 0.06f, -1.46f);
+                    List<Vector3> possiblePositions = new List<Vector3>()
+                    {
+                        new Vector3(12.81f, -0.09f, -36.44f),
+                        new Vector3(11.19f, -0.09f, 10.04f),
+                        new Vector3(12.22f, -0.09f, 0.44f)
+                    };
+
+                    int randomIndex = UnityEngine.Random.Range(0, possiblePositions.Count);
+
+                    teleportPosition = possiblePositions[randomIndex];
+
                     CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform.position = teleportPosition;
 
 
