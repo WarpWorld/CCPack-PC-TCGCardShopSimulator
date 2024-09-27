@@ -249,12 +249,10 @@ namespace BepinControl
             int dur = 30;
             if (req.duration > 0) dur = req.duration / 1000;
 
+            
+            if (TestMod.ForceMath || TimedThread.isRunning(TimedType.FORCE_MATH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
-            if (TimedThread.isRunning(TimedType.FORCE_MATH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
-
-            UI_CashCounterScreen ui_CashCounterScreen = CSingleton<UI_CashCounterScreen>.Instance;
-            TextMeshProUGUI text = (TextMeshProUGUI)getProperty(ui_CashCounterScreen, "m_ChangeToGiveAmountText");
-            text.text = "DO THE MATH";
+            TestMod.ForceMath = true;
 
             new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_MATH, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
