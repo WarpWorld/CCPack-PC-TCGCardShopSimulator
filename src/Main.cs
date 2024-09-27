@@ -6,6 +6,8 @@ using HarmonyLib;
 using System.Threading;
 using UnityEngine.EventSystems;
 using System.CodeDom;
+using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
+using System.Runtime.CompilerServices;
 
 
 
@@ -107,19 +109,18 @@ namespace BepinControl
         [HarmonyPatch(typeof(EventSystem), "OnApplicationFocus")]
         public static class EventSystem_OnApplicationFocus_Patch
         {
-            static void Postfix(bool hasFocus)
+            public static void Postfix(bool hasFocus)
             {
                 isFocused = hasFocus;
             }
         }
-
-        [HarmonyPatch(typeof(Customer), "OnCashTaken")]
-        public static class doPaymentPatch
+        [HarmonyPatch(typeof(Customer), "EvaluateFinishScanItem")]
+        public static class DoPaymentChecksPatch
         {
-            public static void prefix(bool isCard)
+            public static void Postfix(Customer __instance)
             {
-                if(ForceUseCash) { isCard = false; return; }
-                if(ForceUseCredit) { isCard = true; return; }
+                if (ForceUseCash) foreach (Customer cust in CSingleton<CustomerManager>.Instance.GetCustomerList()) if (cust.m_CurrentState == ECustomerState.ReadyToPay) cust.m_CustomerCash.SetIsCard(false);
+                if (ForceUseCredit) foreach (Customer cust in CSingleton<CustomerManager>.Instance.GetCustomerList()) if (cust.m_CurrentState == ECustomerState.ReadyToPay) cust.m_CustomerCash.SetIsCard(true);
             }
         }
             
