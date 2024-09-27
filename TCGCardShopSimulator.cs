@@ -1,5 +1,4 @@
 ﻿using CrowdControl.Common;
-using System.Diagnostics.Eventing.Reader;
 using ConnectorType = CrowdControl.Common.ConnectorType;
 
 namespace CrowdControl.Games.Packs.TCGCardShopSimulator
