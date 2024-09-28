@@ -57,7 +57,7 @@ namespace BepinControl
                 //when an effect comes in with the code it will call the paired function
                 {"lights", CrowdDelegates.ToggleLights },
                 {"spawn", CrowdDelegates.SpawnCustomer },
-                {"spawnsmelly", CrowdDelegates.SpawnCustomerSmelly },
+                {"allsmelly", CrowdDelegates.SpawnCustomerSmelly },
                 {"open_store", CrowdDelegates.ShopControls },
                 {"close_store", CrowdDelegates.ShopControls },
                 {"unlockwh", CrowdDelegates.UnlockWarehouse },

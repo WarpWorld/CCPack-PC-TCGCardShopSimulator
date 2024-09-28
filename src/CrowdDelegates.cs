@@ -107,13 +107,6 @@ namespace BepinControl
                     Customer newCustomer = CM.GetNewCustomer();
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
-                    if(newCustomer.HasCheckedOut())
-                    {
-                        if (!newCustomer.IsInsideShop())
-                        {
-                            newCustomer.DeactivateCustomer();
-                        }
-                    }
                 });
             }
             catch (Exception e)
