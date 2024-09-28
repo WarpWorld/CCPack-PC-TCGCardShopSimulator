@@ -43,6 +43,8 @@ namespace BepinControl
         public static string NameOverride = "";
         public static string OrgLanguage = "";
         public static string NewLanguage = "";
+        public static float OrigSensJS = 0f;
+        public static float OrigSensMS = 0f;
 
         public static bool isIrcConnected = false;
         private static bool isChatConnected = false;

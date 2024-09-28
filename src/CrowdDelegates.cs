@@ -167,7 +167,7 @@ namespace BepinControl
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-
+            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Customers when store closed usually walk away, we should just reject these, and run when store is open
             List<Customer> customers = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
             CustomerManager customerManager = CSingleton<CustomerManager>.Instance;
             TestMod.mls.LogInfo($"Customers?");
@@ -249,7 +249,7 @@ namespace BepinControl
             int dur = 30;
             if (req.duration > 0) dur = req.duration / 1000;
 
-            
+
             if (TestMod.ForceMath || TimedThread.isRunning(TimedType.FORCE_MATH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
 
@@ -257,12 +257,36 @@ namespace BepinControl
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
             if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
- 
+
             TestMod.ForceMath = true;
 
             new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_MATH, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+        public static CrowdResponse SensitivityLow(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+
+            if (TimedThread.isRunning(TimedType.SENSITIVITY_LOW)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.SENSITIVITY_LOW, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+
+        public static CrowdResponse SensitivityHigh(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+
+            if (TimedThread.isRunning(TimedType.SENSITIVITY_HIGH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.SENSITIVITY_HIGH, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+
         public static CrowdResponse ForcePaymentType(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -446,7 +470,7 @@ namespace BepinControl
             if(req.duration > 0) dur = req.duration / 1000;
 
             if (TimedThread.isRunning(TimedType.WORKERS_FAST)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
-
+            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//workers leave when store closed
 
             new Thread(new TimedThread(req.GetReqID(), TimedType.WORKERS_FAST, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
@@ -610,45 +634,6 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
-        {
-            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
-            string message = "";
-            var item = "";
-            RestockData item2 = null;
-            string[] enteredText = req.code.Split('_');
-            if(enteredText.Length > 0)
-            try
-            {
-                    if (enteredText.Length == 5) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3], enteredText[4]);
-                    else if (enteredText.Length == 4) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]);//playmat, Plushie
-                    else if (enteredText.Length == 3) item = string.Join(enteredText[1], enteredText[2]);//single items like Freshener
-                    else item = enteredText[1];
-                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(item.ToLower()));//Item bools
-            }
-            catch
-            {
-                return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
-
-            }
-            try
-            {
-                TestMod.ActionQueue.Enqueue(() =>
-                {
-                    if(item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, 64, item2.isBigBox);
-                    else RestockManager.SpawnPackageBoxItem(item2.itemType, 32, item2.isBigBox);
-                });
-
-            }
-            catch (Exception e)
-            {
-                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
-                status = CrowdResponse.Status.STATUS_RETRY;
-            }
-
-            return new CrowdResponse(req.GetReqID(), status, message);
-        }
-
 
         public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
@@ -703,7 +688,6 @@ namespace BepinControl
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 
-
         public static void setProperty(System.Object a, string prop, System.Object val)
         {
             var f = a.GetType().GetField(prop, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -716,7 +700,6 @@ namespace BepinControl
 
             f.SetValue(a, val);
         }
-
 
         public static System.Object getProperty(System.Object a, string prop)
         {
