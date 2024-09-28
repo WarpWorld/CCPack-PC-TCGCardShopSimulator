@@ -494,6 +494,7 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
+                    CPlayerData.m_CoinAmount += amount;
                     CSingleton<GameUIScreen>.Instance.AddCoin(amount, true);
                 });
 
@@ -525,6 +526,7 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
+                    CPlayerData.m_CoinAmount += amount;
                     CSingleton<GameUIScreen>.Instance.ReduceCoin(amount, true);
                 });
 
