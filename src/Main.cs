@@ -13,6 +13,8 @@ using System.Linq;
 using UnityEngine.Localization.Pseudo;
 using UnityEngine.UI;
 using System.Security.Policy;
+using System.Collections;
+using System.Threading.Tasks;
 
 namespace BepinControl
 {
@@ -22,7 +24,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.0.0";
+        private const string modVersion = "1.0.3.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -30,6 +32,7 @@ namespace BepinControl
 
         internal static TestMod Instance = null;
         private ControlClient client = null;
+        public static bool loadedIntoWorld = false;
         public static bool isFocused = true;
         public static bool doneItems = false;
         public static bool ForceMath = false;
@@ -91,13 +94,21 @@ namespace BepinControl
         
         }
 
-        private static GameObject currentTextObject = null;
-        private static void CreateChatStatusText(string message)
+        public static GameObject currentTextObject = null;
+        public static void CreateChatStatusText(string message)
         {
+
+            if (!loadedIntoWorld) return;
+
+
             if (currentTextObject != null)
             {
                 UnityEngine.Object.Destroy(currentTextObject);
             }
+
+            Camera cam = FindObjectOfType<Camera>();
+            if (cam == null) return;
+
 
             currentTextObject = new GameObject("ChatStatusText");
             TextMeshPro chatStatusText = currentTextObject.AddComponent<TextMeshPro>();
@@ -109,8 +120,8 @@ namespace BepinControl
             chatStatusText.lineSpacing = 1.2f; 
 
      
-            Camera cam = FindObjectOfType<Camera>();
-            Vector3 screenCenterPosition = cam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0.2f));
+            
+            Vector3 screenCenterPosition = cam.ViewportToWorldPoint(new Vector3(0.5f, 0.6f, 0.15f));
             currentTextObject.transform.position = screenCenterPosition; 
 
    
@@ -135,9 +146,12 @@ namespace BepinControl
                 if (mainCamera == null) return;
 
                 Vector3 directionToCamera = mainCamera.transform.position - transform.position;
-                directionToCamera.y = 0; 
+                directionToCamera.y = 0;
+                directionToCamera.Normalize();  
+
                 Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
-                transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0); 
+                transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0);
+
             }
         }
 
@@ -151,6 +165,24 @@ namespace BepinControl
                 isChatConnected = true;
             }
         }
+
+
+
+        public static void MakeCustomerSmellyTemporarily(Customer customer, float duration)
+        {
+            customer.SetSmelly();
+
+            Timer timer = new Timer(_ => ClearSmellyStatus(customer), null, (int)(duration * 1000), Timeout.Infinite);
+        }
+
+        private static void ClearSmellyStatus(Customer customer)
+        {
+            customer.m_SmellyFX.SetActive(false);
+            customer.m_CleanFX.SetActive(true);
+            CrowdDelegates.setProperty(customer, "m_IsSmelly", false);
+            CSingleton<CustomerManager>.Instance.RemoveFromSmellyCustomerList(customer);
+        }
+
 
 
         private static List<string> allowedUsernames = new List<string> { "jaku", "s4turn", "crowdcontrol" };
@@ -225,6 +257,8 @@ namespace BepinControl
                                             badgeDisplay = "[SUBSCRIBER]";
                                         }
 
+                                        string[] triggerWords = { "fart", "gas", "burp", "smell", "shit", "poo", "stank", "nasty" };
+
                                         if (!string.IsNullOrEmpty(badgeDisplay) || allowedUsernames.Any(name => name.Equals(username, StringComparison.OrdinalIgnoreCase)))
                                         {
                                             TestMod.ActionQueue.Enqueue(() =>
@@ -237,10 +271,15 @@ namespace BepinControl
                                                     {
                                                         if (customer.isActiveAndEnabled && customer.name.ToLower() == username.ToLower())
                                                         {
-                                                            // Construct the message with badge and username
                                                             //string displayMessage = $"{badgeDisplay} {username}: {chatMessage}";
+                                                            string lowerChatMessage = chatMessage.ToLower();
+                                                            if (triggerWords.Any(word => lowerChatMessage.Contains(word)))
+                                                            {
+                                                                if (!customer.IsSmelly()) {
+                                                                    MakeCustomerSmellyTemporarily(customer, 5f);
+                                                                }
+                                                            }
 
-                                                            // Show the message as a popup
                                                             CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(chatMessage, 1.8f, customer.transform);
                                                         }
                                                     }
@@ -266,10 +305,9 @@ namespace BepinControl
         {
             try
             {
-                if (twitchWriter != null)
+                if (twitchWriter != null && twitchChannel.Length >= 1)
                 {
-                    // Send a PART command to leave the Twitch channel
-                    twitchWriter.WriteLine("PART #jaku");
+                    twitchWriter.WriteLine("PART #" + twitchChannel);
                     twitchWriter.Flush();
                     twitchWriter.Close();
                 }
@@ -328,7 +366,7 @@ namespace BepinControl
         [HarmonyPrefix]
         static void RunEffects()
         {
-            if (UnityEngine.Input.GetKeyDown(KeyCode.F6)) // Make sure to use UnityEngine.Input
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F6))
             {
                 isTwitchChatAllowed = !isTwitchChatAllowed;
                 if (isChatConnected)
@@ -511,10 +549,20 @@ namespace BepinControl
                 tmp.outlineColor = Color.black; 
                 tmp.outlineWidth = 0.2f;
                 if (isSmelly) tmp.color = new Color(0.0f, 1.0f, 0.0f);
-                
-
-
+ 
                 namePlate.AddComponent<NamePlateController>();
+            }
+        }
+
+
+
+        [HarmonyPatch(typeof(InteractionPlayerController))]
+        [HarmonyPatch("OnEnable")]
+        class Patch_OnEnable
+        {
+            static void Postfix()
+            {
+                loadedIntoWorld = true;
             }
         }
 

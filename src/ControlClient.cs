@@ -355,7 +355,10 @@ namespace BepinControl
         {
 
             TestMod.mls.LogInfo("Connected to Crowd Control");
-
+            TestMod.ActionQueue.Enqueue(() =>
+            {
+                TestMod.CreateChatStatusText("Connected to Crowd Control!");
+            });
             var timer = new Timer(timeUpdate, null, 0, 150);
 
             try
@@ -371,6 +374,10 @@ namespace BepinControl
             }
             catch (Exception e)
             {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    TestMod.CreateChatStatusText("Disconnected from Crowd Control!");
+                }); 
                 TestMod.mls.LogInfo($"Disconnected from Crowd Control. {e.ToString()}");
                 Socket.Close();
             }
