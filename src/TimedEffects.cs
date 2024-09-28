@@ -1,4 +1,5 @@
-﻿using I2.Loc;
+﻿using CMF;
+using I2.Loc;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -147,6 +148,30 @@ namespace BepinControl
                         });
                         break;
                     }
+                case TimedType.SENSITIVITY_HIGH:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            CameraMouseInput CMI = CSingleton<CameraMouseInput>.Instance;
+                            TestMod.OrigSensJS = CMI.joystickInputMultiplier;
+                            TestMod.OrigSensMS = CMI.mouseInputMultiplier;
+                            CMI.joystickInputMultiplier = 100f;
+                            CMI.mouseInputMultiplier = 100f;
+                        });
+                        break;
+                    }
+                case TimedType.SENSITIVITY_LOW:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            CameraMouseInput CMI = CSingleton<CameraMouseInput>.Instance;
+                            TestMod.OrigSensJS = CMI.joystickInputMultiplier;
+                            TestMod.OrigSensMS = CMI.mouseInputMultiplier;
+                            CMI.joystickInputMultiplier = 1f;
+                            CMI.mouseInputMultiplier = 1f;
+                        });
+                        break;
+                    }
             }
         }
 
@@ -250,6 +275,26 @@ namespace BepinControl
                             {
                                 string oldLang = TestMod.OrgLanguage;
                                 SettingScreen.Instance.OnPressLanguageSelect(oldLang);
+                            });
+                            break;
+                        }
+                    case TimedType.SENSITIVITY_HIGH:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                CameraMouseInput CMI = CSingleton<CameraMouseInput>.Instance;
+                                CMI.joystickInputMultiplier = TestMod.OrigSensJS;
+                                CMI.mouseInputMultiplier = TestMod.OrigSensMS;
+                            });
+                            break;
+                        }
+                    case TimedType.SENSITIVITY_LOW:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                CameraMouseInput CMI = CSingleton<CameraMouseInput>.Instance;
+                                CMI.joystickInputMultiplier = TestMod.OrigSensJS;
+                                CMI.mouseInputMultiplier = TestMod.OrigSensMS;
                             });
                             break;
                         }
