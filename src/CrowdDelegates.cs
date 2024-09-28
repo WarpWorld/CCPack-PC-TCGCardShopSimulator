@@ -89,8 +89,7 @@ namespace BepinControl
             string message = "";
             LightManager LM = CSingleton<LightManager>.Instance;
             CustomerManager CM = CustomerManager.Instance;
-            bool hasDayEnded = (bool)getProperty(LM, "m_HasDayEnded");
-            if (!CPlayerData.m_IsShopOnceOpen || hasDayEnded) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
+            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -108,7 +107,13 @@ namespace BepinControl
                     Customer newCustomer = CM.GetNewCustomer();
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
-
+                    if(newCustomer.HasCheckedOut())
+                    {
+                        if (!newCustomer.IsInsideShop())
+                        {
+                            newCustomer.DeactivateCustomer();
+                        }
+                    }
                 });
             }
             catch (Exception e)
@@ -125,8 +130,7 @@ namespace BepinControl
             string message = "";
             LightManager LM = CSingleton<LightManager>.Instance;
             CustomerManager CM = CustomerManager.Instance;
-            bool hasDayEnded = (bool)getProperty(LM, "m_HasDayEnded");
-            if (!CPlayerData.m_IsShopOnceOpen || hasDayEnded) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
+            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -166,7 +170,7 @@ namespace BepinControl
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Customers when store closed usually walk away, we should just reject these, and run when store is open
+            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Customers when store closed usually walk away, we should just reject these, and run when store is open
             List<Customer> customers = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
             CustomerManager customerManager = CSingleton<CustomerManager>.Instance;
             TestMod.mls.LogInfo($"Customers?");
@@ -295,7 +299,7 @@ namespace BepinControl
             if (TimedThread.isRunning(TimedType.FORCE_CASH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             if (TimedThread.isRunning(TimedType.FORCE_CARD)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
-            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
             if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Better state check, still runs if the player leaves the checkout, but only starts if there
             
@@ -635,8 +639,7 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-
-        public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
+        public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
@@ -654,9 +657,47 @@ namespace BepinControl
                 }
                 catch
                 {
+                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
+                }
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, 64, item2.isBigBox);
+                    else RestockManager.SpawnPackageBoxItem(item2.itemType, 32, item2.isBigBox);
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
+        public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            var item = "";
+            RestockData item2 = null;
+            string[] enteredText = req.code.Split('_');
+            if (enteredText.Length > 0)
+            {
+                try
+                {
+                    if (enteredText.Length == 5) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3], enteredText[4]);
+                    else if (enteredText.Length == 4) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]);//playmat, Plushie
+                    else if (enteredText.Length == 3) item = string.Join(enteredText[1], enteredText[2]);//single items like Freshener
+                    else item = enteredText[1];
+                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Item bools
+                }
+                catch
+                {
                     return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn at player.");
 
                 }
+            }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
