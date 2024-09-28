@@ -68,7 +68,6 @@ namespace BepinControl
                         if (customer.isActiveAndEnabled)
                         {
                             List<string> textList = new List<string> { "heyooo" };
-
                             setProperty(customer, "m_IsChattyCustomer ", true);
                             CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(textList[0], 1.8f, customer.transform);
                         }
@@ -526,7 +525,7 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    CPlayerData.m_CoinAmount += amount;
+                    CPlayerData.m_CoinAmount -= amount;//this should be negative, silly
                     CSingleton<GameUIScreen>.Instance.ReduceCoin(amount, true);
                 });
 
