@@ -74,7 +74,6 @@ namespace BepinControl
             harmony.PatchAll(typeof(TestMod));
             harmony.PatchAll();
             CustomerManagerPatches.ApplyPatches(harmony);
-            
 
             mls.LogInfo($"Initializing Crowd Control");
             
@@ -415,7 +414,14 @@ namespace BepinControl
             }
 
         }
-
+        [HarmonyPatch(typeof(TitleScreen), "Start")]
+        public static class TitleScreenPatch
+        {
+            public static void Postfix(ref TextMeshProUGUI ___m_VersionText)
+            {
+               ___m_VersionText.text += "\nCrowd Control version: v" + TestMod.modVersion;
+            }
+        }
 
         [HarmonyPatch(typeof(EventSystem), "OnApplicationFocus")]
         public static class EventSystem_OnApplicationFocus_Patch

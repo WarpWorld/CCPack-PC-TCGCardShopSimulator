@@ -87,9 +87,8 @@ namespace BepinControl
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-            LightManager LM = CSingleton<LightManager>.Instance;
             CustomerManager CM = CustomerManager.Instance;
-            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -121,9 +120,8 @@ namespace BepinControl
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-            LightManager LM = CSingleton<LightManager>.Instance;
             CustomerManager CM = CustomerManager.Instance;
-            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -163,7 +161,7 @@ namespace BepinControl
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Customers when store closed usually walk away, we should just reject these, and run when store is open
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Customers when store closed usually walk away, we should just reject these, and run when store is open
             List<Customer> customers = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
             CustomerManager customerManager = CSingleton<CustomerManager>.Instance;
             TestMod.mls.LogInfo($"Customers?");
@@ -249,7 +247,7 @@ namespace BepinControl
             if (TestMod.ForceMath || TimedThread.isRunning(TimedType.FORCE_MATH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
 
-            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
             if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
@@ -292,7 +290,7 @@ namespace BepinControl
             if (TimedThread.isRunning(TimedType.FORCE_CASH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             if (TimedThread.isRunning(TimedType.FORCE_CARD)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
-            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
             if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Better state check, still runs if the player leaves the checkout, but only starts if there
             
@@ -518,6 +516,7 @@ namespace BepinControl
                 return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Player has no money to take.");
 
             }
+            if (CPlayerData.m_CoinAmount < amount) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player doesn't have enough money to take");//Negative Balance Fix
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -668,6 +667,29 @@ namespace BepinControl
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 
+        public static CrowdResponse ThrowItem(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            bool isHoldingItem = (bool)getProperty(InteractionPlayerController.Instance, "m_IsHoldBoxMode");
+            bool isMovingItem = (bool)getProperty(InteractionPlayerController.Instance, "m_IsMovingBoxMode");
+            TestMod.mls.LogInfo("Is Holding Item: " + isHoldingItem);
+            if (!isHoldingItem) { return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player has no item in their hand"); }
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    CSingleton<InteractablePackagingBox>.Instance.ThrowBox(true);
+                });
+            }
+            catch(Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
         public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
