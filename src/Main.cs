@@ -34,7 +34,7 @@ namespace BepinControl
         private ControlClient client = null;
         public static bool loadedIntoWorld = false;
         public static bool isFocused = true;
-        public static bool doneItems = false;
+        //public static bool doneItems = false; //comment out, keep for future use if necessary
         public static bool ForceMath = false;
         public static bool WorkersFast = false;
         public static bool ForceUseCash = false;
@@ -389,15 +389,15 @@ namespace BepinControl
             }
 
 
-            if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
+           /* if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
             {
                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
                 {
-                    TestMod.mls.LogInfo(cardPack.name + " : Warehouse Rooms: " + UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count);
+                    TestMod.mls.LogInfo(cardPack.name);
 
                 }
                 doneItems = true;
-            }
+            }*/
 
             while (ActionQueue.Count > 0)
             {
