@@ -292,6 +292,8 @@ namespace BepinControl
 
                 {"sensitivityhigh", CrowdDelegates.SensitivityHigh },
                 {"sensitivitylow", CrowdDelegates.SensitivityLow },
+
+                {"throwitem", CrowdDelegates.ThrowItem },
             };
         }
 
