@@ -172,6 +172,14 @@ namespace BepinControl
                         });
                         break;
                     }
+                case TimedType.FORCE_EXACT_CHANGE:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            TestMod.ExactChange = true;
+                        });
+                        break;
+                    }
             }
         }
 
@@ -295,6 +303,14 @@ namespace BepinControl
                                 CameraMouseInput CMI = CSingleton<CameraMouseInput>.Instance;
                                 CMI.joystickInputMultiplier = TestMod.OrigSensJS;
                                 CMI.mouseInputMultiplier = TestMod.OrigSensMS;
+                            });
+                            break;
+                        }
+                    case TimedType.FORCE_EXACT_CHANGE:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                TestMod.ExactChange = false;
                             });
                             break;
                         }

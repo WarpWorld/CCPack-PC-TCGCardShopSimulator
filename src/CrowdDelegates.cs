@@ -690,6 +690,25 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+
+        public static CrowdResponse ExactChange(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+            if (!CPlayerData.m_IsShopOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            if (TimedThread.isRunning(TimedType.ALLOW_MISCHARGE)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (TimedThread.isRunning(TimedType.FORCE_EXACT_CHANGE)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (TimedThread.isRunning(TimedType.FORCE_CASH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_EXACT_CHANGE, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
         public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;

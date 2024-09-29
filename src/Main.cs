@@ -15,6 +15,7 @@ using UnityEngine.UI;
 using System.Security.Policy;
 using System.Collections;
 using System.Threading.Tasks;
+using System.Runtime;
 
 namespace BepinControl
 {
@@ -39,6 +40,7 @@ namespace BepinControl
         public static bool WorkersFast = false;
         public static bool ForceUseCash = false;
         public static bool ForceUseCredit = false;
+        public static bool ExactChange = false;
         public static bool isWarehouseUnlocked = false;
         public static bool isSmelly = false;
         public static int WareHouseRoomsUnlocked = 0;
@@ -487,6 +489,32 @@ namespace BepinControl
             }
         }
 
+        [HarmonyPatch(typeof(CustomerManager), "GetCustomerExactChangeChance")]
+        public static class HarmonyPatch_CustomerManager_GetCustomerExactChangeChance
+        {
+            private static bool Prefix(ref int __result)
+            {
+                if (ExactChange)
+                {
+                    __result = 100;
+                    return false;
+                }
+                return true;
+            }
+        }
+        [HarmonyPatch(typeof(Customer), "GetRandomPayAmount")]
+        public static class HarmonyPatch_Customer_GetRandomPayAmount
+        {
+            private static bool Prefix(float limit, ref float __result)
+            {
+                if (ExactChange)
+                {
+                    __result = limit;
+                    return false;
+                }
+                return true;
+            }
+        }
         public class NamePlateController : MonoBehaviour
         {
             private Camera mainCamera;

@@ -294,6 +294,7 @@ namespace BepinControl
                 {"sensitivitylow", CrowdDelegates.SensitivityLow },
 
                 {"throwitem", CrowdDelegates.ThrowItem },
+                {"exactchange", CrowdDelegates.ExactChange },
             };
         }
 
