@@ -1,6 +1,3 @@
-
-using DG.Tweening;
-using DG.Tweening.Core.Easing;
 using I2.Loc;
 using System;
 using System.Collections.Generic;
@@ -83,6 +80,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse SpawnCustomer(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -116,6 +114,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+       
         public static CrowdResponse SpawnCustomerSmelly(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -155,6 +154,23 @@ namespace BepinControl
             }
 
             return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
+        public static CrowdResponse LargeBills(ControlClient client, CrowdRequest req)
+        {
+            int dur = 30;
+            if (req.duration > 0) dur = req.duration / 1000;
+            TestMod.mls.LogInfo($"running");
+
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Better state check, still runs if the player leaves the checkout, but only starts if there
+
+            if (TimedThread.isRunning(TimedType.FORCE_LARGE_BILLS)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            if (TimedThread.isRunning(TimedType.FORCE_CARD)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_LARGE_BILLS, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
 
         public static CrowdResponse AllSmellyCustomers(ControlClient client, CrowdRequest req)
@@ -197,6 +213,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+       
         public static CrowdResponse TeleportPlayer(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -238,6 +255,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse ForceMath(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -257,6 +275,7 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_MATH, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+        
         public static CrowdResponse SensitivityLow(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -322,6 +341,7 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.INVERT_X, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+        
         public static CrowdResponse SetLanguage(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -422,6 +442,7 @@ namespace BepinControl
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
 
         }
+        
         public static CrowdResponse InvertY(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -469,6 +490,7 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.WORKERS_FAST, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+        
         public static CrowdResponse GiveMoney(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -501,6 +523,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse TakeMoney(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -534,6 +557,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse ShopControls(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -570,6 +594,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse UpgradeWarehouse(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -590,6 +615,7 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse UpgradeStore(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -610,6 +636,7 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse UnlockWarehouse(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -631,6 +658,7 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
         public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
