@@ -493,11 +493,17 @@ namespace BepinControl
         {
             public static void Postfix(ref InteractableCustomerCash ___m_CustomerCash)
             {
-                if (LargeBills && ___m_CustomerCash.m_IsCard == false)
+                if (LargeBills && ___m_CustomerCash.m_IsCard == false)//only trigger on cash effects, 
                 {
                     float size = UnityEngine.Random.Range(6.0f, 24.0f);
                     ___m_CustomerCash.m_CashModel.transform.localScale = new Vector3(size, size, size);
                     ___m_CustomerCash.m_CashOutlineModel.transform.localScale = new Vector3(size, size, size);
+                }
+                if (LargeBills && ___m_CustomerCash.m_IsCard == true)//Trigger on Card Payments too
+                {
+                    float size = UnityEngine.Random.Range(6.0f, 24.0f);
+                    ___m_CustomerCash.m_CardModel.transform.localScale = new Vector3(size, size, size);
+                    ___m_CustomerCash.m_CardOutlineModel.transform.localScale = new Vector3(size, size, size);
                 }
             }
         }
