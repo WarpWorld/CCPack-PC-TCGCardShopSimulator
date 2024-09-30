@@ -295,6 +295,27 @@ namespace BepinControl
 
                 {"throwitem", CrowdDelegates.ThrowItem },
                 {"exactchange", CrowdDelegates.ExactChange },
+                {"furniture_small_cabinet", CrowdDelegates.GiveItemFurniture },
+                {"furniture_small_metal_rack", CrowdDelegates.GiveItemFurniture },
+                {"furniture_play_table", CrowdDelegates.GiveItemFurniture},
+                {"furniture_small_personal_shelf", CrowdDelegates.GiveItemFurniture},
+                {"furniture_single_sided_shelf", CrowdDelegates.GiveItemFurniture },
+                {"furniture_card_table", CrowdDelegates.GiveItemFurniture },
+                {"furniture_small_warehouse_shelf", CrowdDelegates.GiveItemFurniture },
+                {"furniture_small_card_display", CrowdDelegates.GiveItemFurniture },
+                {"furniture_auto_scent_m100", CrowdDelegates.GiveItemFurniture },
+                {"furniture_workbench", CrowdDelegates.GiveItemFurniture },
+                {"furniture_double_sided_shelf", CrowdDelegates.GiveItemFurniture },
+                {"furniture_big_warehouse_shelf", CrowdDelegates.GiveItemFurniture },
+                {"furniture_checkout_counter", CrowdDelegates.GiveItemFurniture },
+                {"furniture_auto_scent_g500", CrowdDelegates.GiveItemFurniture },
+                {"furniture_card_display_table", CrowdDelegates.GiveItemFurniture },
+                {"furniture_big_personal_shelf", CrowdDelegates.GiveItemFurniture },
+                {"furniture_vintage_card_table", CrowdDelegates.GiveItemFurniture },
+                {"furniture_wide_shelf", CrowdDelegates.GiveItemFurniture },
+                {"furniture_huge_personal_shelf", CrowdDelegates.GiveItemFurniture },
+                {"furniture_auto_scent_t1000", CrowdDelegates.GiveItemFurniture},
+                {"furniture_big_card_display", CrowdDelegates.GiveItemFurniture },
             };
         }
 

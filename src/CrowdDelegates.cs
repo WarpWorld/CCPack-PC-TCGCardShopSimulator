@@ -489,7 +489,7 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     CPlayerData.m_CoinAmount += amount;
-                    CSingleton<GameUIScreen>.Instance.AddCoin(amount, true);
+                    CSingleton<GameUIScreen>.Instance.AddCoin(amount, true);//Set as true to play Anim
                 });
 
             }
@@ -516,13 +516,13 @@ namespace BepinControl
                 return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Player has no money to take.");
 
             }
-            if (CPlayerData.m_CoinAmount < amount) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player doesn't have enough money to take");//Negative Balance Fix
+            //if (CPlayerData.m_CoinAmount < amount) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player doesn't have enough money to take");//Negative Balance Fix
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     CPlayerData.m_CoinAmount -= amount;//this should be negative, silly
-                    CSingleton<GameUIScreen>.Instance.ReduceCoin(amount, true);
+                    CSingleton<GameUIScreen>.Instance.ReduceCoin(amount, true);//Set as true to play Anim
                 });
 
             }
@@ -645,11 +645,11 @@ namespace BepinControl
                     else if (enteredText.Length == 4) { item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]); }//playmat, Plushie
                     else if (enteredText.Length == 3) { item = string.Join(" ", enteredText[1], enteredText[2]); }//single items like Freshener
                     else { item = enteredText[1]; }
-                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item);//Item bools
+                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Item bools
                 }
                 catch
                 {
-                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
+                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to Find Item in Array.");
                 }
             try
             {
@@ -673,7 +673,7 @@ namespace BepinControl
             string message = "";
             bool isHoldingItem = (bool)getProperty(InteractionPlayerController.Instance, "m_IsHoldBoxMode");
             bool isMovingItem = (bool)getProperty(InteractionPlayerController.Instance, "m_IsMovingBoxMode");
-            TestMod.mls.LogInfo("Is Holding Item: " + isHoldingItem);
+            //TestMod.mls.LogInfo("Is Holding Item: " + isHoldingItem);//Comment out Logging info
             if (!isHoldingItem) { return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player has no item in their hand"); }
             try
             {
@@ -709,6 +709,41 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_EXACT_CHANGE, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
+
+        public static CrowdResponse GiveItemFurniture(ControlClient client, CrowdRequest req) //https://pastebin.com/DjRnrjzi Furniture List
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            var item = "";
+            FurniturePurchaseData item2 = null;
+            string[] enteredText = req.code.Split('_');
+            if (enteredText.Length > 0)
+                try
+                {
+                    if (enteredText.Length == 4) { item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]); }//3 Word Items
+                    else if (enteredText.Length == 3) { item = string.Join(" ", enteredText[1], enteredText[2]); }//2 word Items
+                    item2 = CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.Find(z => z.name.ToLower() == item.ToLower());//Item bools
+                }
+                catch
+                {
+                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to Find Furniture Item in Array");
+                }
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    Transform randomPackageSpawnPos = RestockManager.GetRandomPackageSpawnPos();
+                    ShelfManager.SpawnInteractableObjectInPackageBox(item2.objectType, randomPackageSpawnPos.position, randomPackageSpawnPos.rotation);
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
         public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
