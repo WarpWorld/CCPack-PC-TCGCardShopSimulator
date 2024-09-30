@@ -499,9 +499,9 @@ namespace BepinControl
                     ___m_CustomerCash.m_CashModel.transform.localScale = new Vector3(size, size, size);
                     ___m_CustomerCash.m_CashOutlineModel.transform.localScale = new Vector3(size, size, size);
                 }
-                if (LargeBills && ___m_CustomerCash.m_IsCard == true)//Trigger on Card Payments too
+                else if (LargeBills && ___m_CustomerCash.m_IsCard == true)//Trigger on Card Payments too
                 {
-                    float size = UnityEngine.Random.Range(6.0f, 24.0f);
+                    float size = UnityEngine.Random.Range(12.0f, 40.0f);//make cards more noticeable
                     ___m_CustomerCash.m_CardModel.transform.localScale = new Vector3(size, size, size);
                     ___m_CustomerCash.m_CardOutlineModel.transform.localScale = new Vector3(size, size, size);
                 }
