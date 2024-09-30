@@ -20,28 +20,34 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
         public override EffectList Effects => new List<Effect>
         {
                 new Effect("Toggle Lights", "lights") { Description = "Toggle the Shop Lights", Category = "Misc"},
-                new Effect("Spawn Customer", "spawn") { Description = "Spawns a New Customer", Category = "Spawn"},
-                new Effect("Spawn Stinky Customer", "spawnsmelly") { Description = "Spawns a New Extra Stinky Customer", Category = "Spawn"},
                 new Effect("Open Store", "open_store") { Description = "Opens the Players Store", Category = "Misc"},
                 new Effect("Close Store", "close_store") { Description = "Closes the Players Store", Category = "Misc"},
                 new Effect("Unlock Storage", "unlockwh") { Description = "Unlock The Storage room", Category = "Misc"},
                 new Effect("Upgrade Storage", "upgradewh") { Description = "Upgrade the Storage Room", Category = "Misc"},
                 new Effect("Make All Customers Smelly", "allsmelly") { Description = "Make All the Customers Smelly", Category = "Misc"},
                 new Effect("Upgrade the Player Store", "upgradestore") { Description = "Upgrades the Player Store Size", Category = "Misc"},
+
+                new Effect("Spawn Customer", "spawn") { Description = "Spawns a New Customer", Category = "Spawn"},
+                new Effect("Spawn Stinky Customer", "spawnsmelly") { Description = "Spawns a New Extra Stinky Customer", Category = "Spawn"},
+
                 new Effect("Teleport Player out of Store", "teleport") { Description = "Teleports the Player over the street", Category = "Player"},
                 new Effect("Throw Player Item", "throwitem") { Description = "Make the player throw their item!", Category = "Player"},
                 new Effect("High Sensitivity", "sensitivityhigh") { Description = "Set the Sensitivity for the Player Controls High, making them dizzy", Duration = 30, Category = "Player"},
                 new Effect("Low Sensitivity", "sensitivitylow") { Description = "Set the Sensitivity for the Player Controls Super Low.", Duration = 30, Category = "Player"},
+
                 new Effect("Give $100", "give_100") { Description = "Give the Player $100", Category = "Money"},
                 new Effect("Give $1000", "give_1000") { Description = "Give the Player $1000", Category = "Money"},
                 new Effect("Give $10000", "give_10000") { Description = "Give The Player $10000", Category = "Money"},
                 new Effect("Take $100", "take_100") { Description = "Take away $100 from the Player", Category = "Money"},
                 new Effect("Take $1000", "take_1000") { Description = "Take Away $1000 from the Player", Category = "Money"},
                 new Effect("Take $10000", "take_10000") { Description = "Take Away $10000 from the Player", Category = "Money"},
+
                 new Effect("Force Cash Only", "forcepayment_cash") { Description = "Force all customers to pay with cash only.", Duration = 60, Category = "Payments"},
                 new Effect("Force Card Only", "forcepayment_card") { Description = "Force all customers to pay with card only.", Duration = 60, Category = "Payments"},
+                new Effect("Force Large Bills", "largebills") { Description = "Force customers that are paying with cash to use \"Large Bills\".", Duration = 60, Category = "Payments"},
                 new Effect("Force Exact Change", "exactchange") { Description = "Customers pay with Exact amounts when using Cash!", Duration = 60, Category = "Payments"},
                 new Effect("Make the streamer do the Math", "forcemath") { Description = "Force The Player to do Math", Duration = 30, Category = "Payments"},
+
                 //new Effect("Give 32 Common Packs", "give_common_pack_(32)") { Description = "Send the player a Common Pack (32)", Category = "Items"},
                 new Effect("Give 64 Common Packs", "give_common_pack_(64)") { Description = "Send the player a Common Pack (64)", Category = "Items"},
                 //new Effect("Give Common Box (4)", "give_common_box_(4)") { Description = "Send the player a Common Box (4)", Category = "Items"},
@@ -236,8 +242,10 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
 
                 new Effect("High FOV", "highfov") { Description = "Set the FOV for the player higher than normal!", Duration = 30, Category = "Game FOV"},
                 new Effect("Low FOV", "lowfov") { Description = "Set the FOV for the player lower, giving them tunnel vision!", Duration = 30, Category = "Game FOV"},
+
                 new Effect("Invert X-Axis", "invertx") { Description = "Invert the X-Axis of the players controls!", Duration = 30, Category = "Axis Control"},
                 new Effect("Invert Y-Axis", "inverty") { Description = "Invert the Y-Axis of the players controls!", Duration = 30, Category = "Axis Control"},
+
                 new Effect("Set Language to English", "language_english") { Description = "Set Language to English.", Duration = 60, Category = "Game Language"},
                 new Effect("Set Language to French", "language_french") { Description = "Set Language to French.", Duration = 60, Category = "Game Language"},
                 new Effect("Set Language to German", "language_german") { Description = "Set Language to German.", Duration = 60, Category = "Game Language"},

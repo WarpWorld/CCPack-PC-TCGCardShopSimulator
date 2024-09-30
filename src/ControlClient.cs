@@ -1,6 +1,6 @@
 /*
- * ControlValley
- * Stardew Valley Support for Twitch Crowd Control
+ * ControlClient
+ * Unity Game Support for Twitch Crowd Control
  * Copyright (C) 2021 TerribleTable
  * LGPL v2.1
  * 
@@ -67,6 +67,7 @@ namespace BepinControl
                 {"forcemath", CrowdDelegates.ForceMath },
                 {"forcepayment_cash", CrowdDelegates.ForcePaymentType},
                 {"forcepayment_card", CrowdDelegates.ForcePaymentType},
+                {"largebills", CrowdDelegates.LargeBills},
                 {"give_100", CrowdDelegates.GiveMoney },
                 {"give_1000", CrowdDelegates.GiveMoney },
                 {"give_10000", CrowdDelegates.GiveMoney },

@@ -10,12 +10,6 @@ using TMPro;
 using System.Net.Sockets;
 using System.IO;
 using System.Linq;
-using UnityEngine.Localization.Pseudo;
-using UnityEngine.UI;
-using System.Security.Policy;
-using System.Collections;
-using System.Threading.Tasks;
-using System.Runtime;
 
 namespace BepinControl
 {
@@ -41,6 +35,7 @@ namespace BepinControl
         public static bool ForceUseCash = false;
         public static bool ForceUseCredit = false;
         public static bool ExactChange = false;
+        public static bool LargeBills = false;
         public static bool isWarehouseUnlocked = false;
         public static bool isSmelly = false;
         public static int WareHouseRoomsUnlocked = 0;
@@ -490,6 +485,20 @@ namespace BepinControl
                     ___m_IsUsingCard = true;
                 }
 
+            }
+        }
+
+        [HarmonyPatch(typeof(Customer), "EvaluateFinishScanItem")]
+        public static class LargeBillsPatch
+        {
+            public static void Postfix(ref InteractableCustomerCash ___m_CustomerCash)
+            {
+                if (LargeBills && ___m_CustomerCash.m_IsCard == false)
+                {
+                    float size = UnityEngine.Random.Range(6.0f, 24.0f);
+                    ___m_CustomerCash.m_CashModel.transform.localScale = new Vector3(size, size, size);
+                    ___m_CustomerCash.m_CashOutlineModel.transform.localScale = new Vector3(size, size, size);
+                }
             }
         }
 

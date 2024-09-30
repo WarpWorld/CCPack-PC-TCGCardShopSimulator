@@ -180,6 +180,14 @@ namespace BepinControl
                         });
                         break;
                     }
+                case TimedType.FORCE_LARGE_BILLS:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            TestMod.LargeBills = true;
+                        });
+                        break;
+                    }
             }
         }
 
@@ -311,6 +319,14 @@ namespace BepinControl
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 TestMod.ExactChange = false;
+                            });
+                            break;
+                        }
+                    case TimedType.FORCE_LARGE_BILLS:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                TestMod.LargeBills = false;
                             });
                             break;
                         }
