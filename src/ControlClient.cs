@@ -57,7 +57,8 @@ namespace BepinControl
                 //when an effect comes in with the code it will call the paired function
                 {"lights", CrowdDelegates.ToggleLights },
                 {"spawn", CrowdDelegates.SpawnCustomer },
-                {"allsmelly", CrowdDelegates.SpawnCustomerSmelly },
+                {"spawnsmelly", CrowdDelegates.SpawnCustomerSmelly },
+                {"allsmelly", CrowdDelegates.AllSmellyCustomers },
                 {"open_store", CrowdDelegates.ShopControls },
                 {"close_store", CrowdDelegates.ShopControls },
                 {"unlockwh", CrowdDelegates.UnlockWarehouse },
@@ -75,7 +76,7 @@ namespace BepinControl
                 {"take_1000", CrowdDelegates.TakeMoney },
                 {"take_10000", CrowdDelegates.TakeMoney },
 
-                                //{"give_common_pack_(32)", CrowdDelegates.GiveItem },
+                //{"give_common_pack_(32)", CrowdDelegates.GiveItem },
                 {"give_common_pack_(64)", CrowdDelegates.GiveItem },
                 //{"give_common_box_(4)", CrowdDelegates.GiveItem },
                 {"give_common_box_(8)", CrowdDelegates.GiveItem },
@@ -281,12 +282,7 @@ namespace BepinControl
                 {"language_chineset", CrowdDelegates.SetLanguage },
                 {"language_chineses", CrowdDelegates.SetLanguage },
                 {"language_korean", CrowdDelegates.SetLanguage },
-                {"language_japanese", CrowdDelegates.SetLanguage },
-                {"language_portuguese", CrowdDelegates.SetLanguage },
-                {"language_russian", CrowdDelegates.SetLanguage },
-                {"language_hindi", CrowdDelegates.SetLanguage },
                 {"language_thai", CrowdDelegates.SetLanguage },
-                {"language_arabic", CrowdDelegates.SetLanguage },
                 {"language_dutch", CrowdDelegates.SetLanguage },
 
                 {"speak_heyoo", CrowdDelegates.HeyOhh },

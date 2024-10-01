@@ -29,7 +29,7 @@ namespace BepinControl
         private ControlClient client = null;
         public static bool loadedIntoWorld = false;
         public static bool isFocused = true;
-        //public static bool doneItems = false; //comment out, keep for future use if necessary
+        public static bool doneItems = false; //comment out, keep for future use if necessary
         public static bool ForceMath = false;
         public static bool WorkersFast = false;
         public static bool ForceUseCash = false;
@@ -38,6 +38,10 @@ namespace BepinControl
         public static bool LargeBills = false;
         public static bool isWarehouseUnlocked = false;
         public static bool isSmelly = false;
+        public static Vector3 oldcashScale = new Vector3(6.408165f, 41.87513f, 8.071795f);//cash size fix
+        public static Vector3 oldcashScaleOutline = new Vector3(6.598893f, 43.12251f, 8.312037f);//cash size fix
+        public static Vector3 oldCardScale = new Vector3(5.760878f, 7.510158f, 3.336215f);//card size fix
+        public static Vector3 oldCardScaleOutline = new Vector3(5.897457f, 8.062623f, 3.415312f);//card size fix
         public static int WareHouseRoomsUnlocked = 0;
         public static int ShopRoomUnlocked = 0;
         public static string NameOverride = "";
@@ -45,7 +49,7 @@ namespace BepinControl
         public static string NewLanguage = "";
         public static float OrigSensJS = 0f;
         public static float OrigSensMS = 0f;
-
+        public static bool HasPrintedScales = false;
         public static bool isIrcConnected = false;
         private static bool isChatConnected = false;
         private static bool isTwitchChatAllowed = true;
@@ -385,19 +389,19 @@ namespace BepinControl
             }
 
 
-            /* if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
-             {
-                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
-                 {
-                     TestMod.mls.LogInfo(cardPack.name);
+             //if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
+             //{
+                 //foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
+                 //{
+                     //TestMod.mls.LogInfo(cardPack.name);
 
-                 }
-                //foreach (var furniture in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())
-                {
-                    TestMod.mls.LogInfo(furniture.name);
-                }
-                 doneItems = true;
-             }*/
+                 //}
+                //foreach (var furniture in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
+                //{
+                    //TestMod.mls.LogInfo(furniture.name);
+                //}
+                //doneItems = true;
+             //}
 
             while (ActionQueue.Count > 0)
             {
@@ -495,15 +499,22 @@ namespace BepinControl
             {
                 if (LargeBills && ___m_CustomerCash.m_IsCard == false)//only trigger on cash effects, 
                 {
-                    float size = UnityEngine.Random.Range(6.0f, 24.0f);
+                    float size = UnityEngine.Random.Range(12.0f, 30.0f);//match cash to cards, to make it more noticeable. 
                     ___m_CustomerCash.m_CashModel.transform.localScale = new Vector3(size, size, size);
                     ___m_CustomerCash.m_CashOutlineModel.transform.localScale = new Vector3(size, size, size);
                 }
                 else if (LargeBills && ___m_CustomerCash.m_IsCard == true)//Trigger on Card Payments too
                 {
-                    float size = UnityEngine.Random.Range(12.0f, 40.0f);//make cards more noticeable
+                    float size = UnityEngine.Random.Range(12.0f, 30.0f);//make cards more noticeable
                     ___m_CustomerCash.m_CardModel.transform.localScale = new Vector3(size, size, size);
                     ___m_CustomerCash.m_CardOutlineModel.transform.localScale = new Vector3(size, size, size);
+                }
+                else if (!LargeBills)//revert to default sizes, can be grabbed via localscale.x,y,z and printing to log
+                {
+                    ___m_CustomerCash.m_CardModel.transform.localScale = oldCardScale;
+                    ___m_CustomerCash.m_CardOutlineModel.transform.localScale = oldCardScaleOutline;
+                    ___m_CustomerCash.m_CashModel.transform.localScale = oldcashScale;
+                    ___m_CustomerCash.m_CashOutlineModel.transform.localScale = oldcashScaleOutline;
                 }
             }
         }
