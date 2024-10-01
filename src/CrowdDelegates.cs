@@ -379,11 +379,6 @@ namespace BepinControl
                         newLanguage = "Spanish";
                         break;
                     }
-                case "portuguese":
-                    {
-                        newLanguage = "Portuguese";
-                        break;
-                    }
                 case "chineset":
                     {
                         newLanguage = "ChineseT";
@@ -399,29 +394,9 @@ namespace BepinControl
                         newLanguage = "Korean";
                         break;
                     }
-                case "japanese":
-                    {
-                        newLanguage = "Japanese";
-                        break;
-                    }
-                case "russian":
-                    {
-                        newLanguage = "Russian";
-                        break;
-                    }
-                case "hindi":
-                    {
-                        newLanguage = "Hindi";
-                        break;
-                    }
                 case "thai":
                     {
                         newLanguage = "Thai";
-                        break;
-                    }
-                case "arabic":
-                    {
-                        newLanguage = "Arabic";
                         break;
                     }
                 case "dutch":
@@ -701,8 +676,10 @@ namespace BepinControl
             string message = "";
             bool isHoldingItem = (bool)getProperty(InteractionPlayerController.Instance, "m_IsHoldBoxMode");
             bool isMovingItem = (bool)getProperty(InteractionPlayerController.Instance, "m_IsMovingBoxMode");
-            //TestMod.mls.LogInfo("Is Holding Item: " + isHoldingItem);//Comment out Logging info
-            if (!isHoldingItem) { return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player has no item in their hand"); }
+            bool m_isBeingHold = (bool)getProperty(CSingleton<InteractablePackagingBox>.Instance, "m_IsBeingHold");
+            List<Item> m_HoldItemList = (List<Item>)getProperty(InteractionPlayerController.Instance, "m_HoldItemList");
+            //TestMod.mls.LogInfo("Is Holding Item: " + m_isBeingHold);//Comment out Logging info
+            if (!m_isBeingHold || !isHoldingItem) { return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player has no item in their hand"); }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -805,13 +782,13 @@ namespace BepinControl
                     Quaternion rotation = pos.rotation;
                     if (item2.isBigBox)
                     {
-                        InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, position, rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                        InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.2f, position.y+ 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
                         interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, 64);
                         interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
                     }
                     else
                     {
-                        InteractablePackagingBox_Item interactablePackagingBox_Item2 = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxSmallPrefab, position, rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                        InteractablePackagingBox_Item interactablePackagingBox_Item2 = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxSmallPrefab, new Vector3(position.x + 1.2f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
                         interactablePackagingBox_Item2.FillBoxWithItem(item2.itemType, 32);
                         interactablePackagingBox_Item2.name = interactablePackagingBox_Item2.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
                     }

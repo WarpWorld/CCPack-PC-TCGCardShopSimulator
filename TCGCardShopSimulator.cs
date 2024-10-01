@@ -245,21 +245,16 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Invert X-Axis", "invertx") { Description = "Invert the X-Axis of the players controls!", Duration = 30, Category = "Axis Control", Price = 100 },
                 new("Invert Y-Axis", "inverty") { Description = "Invert the Y-Axis of the players controls!", Duration = 30, Category = "Axis Control", Price = 100 },
 
-                new("Set Language to English", "language_english") { Description = "Set Language to English.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to French", "language_french") { Description = "Set Language to French.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to German", "language_german") { Description = "Set Language to German.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Spanish", "language_spanish") { Description = "Set Language to Spanish.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Italian", "language_italian") { Description = "Set Language to Italian.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Portuguese (Portugal)", "language_portuguese") { Description = "Set Language to Portuguese (Portugal).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Chinese (Simplified)", "language_chineses") { Description = "Set Language to Portuguese (Brazil).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Chinese (Traditional)", "language_chineset") { Description = "Set Language to Chinese T.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Korean", "language_korean") { Description = "Set Language to Korean.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Japanese", "language_japanese") { Description = "Set Language to Japanese.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Russian", "language_russian") { Description = "Set Language to Russian.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Hindi", "language_hindi") { Description = "Set Language to Hindi.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Thai", "language_thai") { Description = "Set Language to Thai.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Arabic", "language_arabic") { Description = "Set Language to Arabic.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
-                new("Set Language to Dutch", "language_dutch") { Description = "Set Language to Dutch.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },
+                new("Set Language to English", "language_english") { Description = "Set Language to English.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to French", "language_french") { Description = "Set Language to French.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to German", "language_german") { Description = "Set Language to German.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to Spanish", "language_spanish") { Description = "Set Language to Spanish.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to Italian", "language_italian") { Description = "Set Language to Italian.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to Chinese (Simplified)", "language_chineses") { Description = "Set Language to Chinese (Simplified).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to Chinese (Traditional)", "language_chineset") { Description = "Set Language to Chinese (Traditional).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to Korean", "language_korean") { Description = "Set Language to Korean.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to Thai", "language_thai") { Description = "Set Language to Thai.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                new("Set Language to Dutch", "language_dutch") { Description = "Set Language to Dutch.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
 
                 new("Hey Ohhh", "speak_heyoo") { Description = "Speak!", Category = "Speak", Price = 25 },
 
