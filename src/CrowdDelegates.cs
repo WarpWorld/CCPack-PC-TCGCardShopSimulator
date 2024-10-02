@@ -686,6 +686,7 @@ namespace BepinControl
                 {
                     if (enteredText.Length == 4) { item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]); }//3 Word Items
                     else if (enteredText.Length == 3) { item = string.Join(" ", enteredText[1], enteredText[2]); }//2 word Items
+                    else if (enteredText.Length == 2) { item = string.Join(" ", enteredText[1]); }//workbench fix
                     item2 = CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.Find(z => z.name.ToLower() == item.ToLower());//Item bools
                 }
                 catch
