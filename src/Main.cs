@@ -389,19 +389,19 @@ namespace BepinControl
             }
 
 
-             //if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
-             //{
-                 //foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
-                 //{
-                     //TestMod.mls.LogInfo(cardPack.name);
+             if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
+             {
+                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
+                 {
+                     TestMod.mls.LogInfo(cardPack.name);
 
-                 //}
+                 }
                 //foreach (var furniture in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
                 //{
                     //TestMod.mls.LogInfo(furniture.name);
                 //}
-                //doneItems = true;
-             //}
+                doneItems = true;
+             }
 
             while (ActionQueue.Count > 0)
             {
