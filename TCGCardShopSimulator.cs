@@ -23,7 +23,7 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Close Store", "close_store") { Description = "Closes the Players Store", Category = "Misc", Price = 100 },
                 new("Unlock Storage", "unlockwh") { Description = "Unlock The Storage room", Category = "Misc", Price = 250 },
                 new("Upgrade Storage", "upgradewh") { Description = "Upgrade the Storage Room", Category = "Misc", Price = 1000 },
-                new("Make All Customers Smelly", "allsmelly") { Description = "Make All the Customers Smelly", Category = "Misc", Price = 150 },
+                new("Make All Customers Stinky", "allsmelly") { Description = "Make All the Customers Smelly", Category = "Misc", Price = 150 },
                 new("Upgrade the Player Store", "upgradestore") { Description = "Upgrades the Player Store Size", Category = "Misc", Price = 2000 },
 
                 new("Spawn Customer", "spawn") { Description = "Spawns a New Customer", Category = "Spawn", Price = 100 },
@@ -31,8 +31,6 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
 
                 new("Teleport Player out of Store", "teleport") { Description = "Teleports the Player over the street", Category = "Player", Price = 50 },
                 new("Throw Player Item", "throwitem") { Description = "Make the player throw their item!", Category = "Player", Price = 25 },
-                new("High Sensitivity", "sensitivityhigh") { Description = "Set the Sensitivity for the Player Controls High, making them dizzy", Duration = 30, Category = "Player", Price = 100 },
-                new("Low Sensitivity", "sensitivitylow") { Description = "Set the Sensitivity for the Player Controls Super Low.", Duration = 30, Category = "Player", Price = 100 },
 
                 new("Give $100", "give_100") { Description = "Give the Player $100", Category = "Money", Price = 10 },
                 new("Give $1000", "give_1000") { Description = "Give the Player $1000", Category = "Money", Price = 100 },
@@ -253,7 +251,6 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Set Language to Chinese (Simplified)", "language_chineses") { Description = "Set Language to Chinese (Simplified).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 new("Set Language to Chinese (Traditional)", "language_chineset") { Description = "Set Language to Chinese (Traditional).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 new("Set Language to Korean", "language_korean") { Description = "Set Language to Korean.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
-                new("Set Language to Thai", "language_thai") { Description = "Set Language to Thai.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 new("Set Language to Dutch", "language_dutch") { Description = "Set Language to Dutch.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
 
                 new("Hey Ohhh", "speak_heyoo") { Description = "Speak!", Category = "Speak", Price = 25 },

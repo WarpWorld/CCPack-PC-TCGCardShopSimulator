@@ -287,8 +287,6 @@ namespace BepinControl
 
                 {"speak_heyoo", CrowdDelegates.HeyOhh },
 
-                {"sensitivityhigh", CrowdDelegates.SensitivityHigh },
-                {"sensitivitylow", CrowdDelegates.SensitivityLow },
 
                 {"throwitem", CrowdDelegates.ThrowItem },
                 {"exactchange", CrowdDelegates.ExactChange },

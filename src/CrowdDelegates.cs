@@ -275,30 +275,6 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.FORCE_MATH, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
-        
-        public static CrowdResponse SensitivityLow(ControlClient client, CrowdRequest req)
-        {
-            int dur = 30;
-            if (req.duration > 0) dur = req.duration / 1000;
-
-
-            if (TimedThread.isRunning(TimedType.SENSITIVITY_LOW)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
-
-            new Thread(new TimedThread(req.GetReqID(), TimedType.SENSITIVITY_LOW, dur * 1000).Run).Start();
-            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
-        }
-
-        public static CrowdResponse SensitivityHigh(ControlClient client, CrowdRequest req)
-        {
-            int dur = 30;
-            if (req.duration > 0) dur = req.duration / 1000;
-
-
-            if (TimedThread.isRunning(TimedType.SENSITIVITY_HIGH)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
-
-            new Thread(new TimedThread(req.GetReqID(), TimedType.SENSITIVITY_HIGH, dur * 1000).Run).Start();
-            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
-        }
 
         public static CrowdResponse ForcePaymentType(ControlClient client, CrowdRequest req)
         {
@@ -394,11 +370,6 @@ namespace BepinControl
                         newLanguage = "Korean";
                         break;
                     }
-                case "thai":
-                    {
-                        newLanguage = "Thai";
-                        break;
-                    }
                 case "dutch":
                     {
                         newLanguage = "Dutch";
@@ -451,18 +422,6 @@ namespace BepinControl
             if (TimedThread.isRunning(TimedType.LOW_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
             new Thread(new TimedThread(req.GetReqID(), TimedType.LOW_FOV, dur * 1000).Run).Start();
-            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
-        }
-
-        public static CrowdResponse WorkersSpeedy(ControlClient client, CrowdRequest req)
-        {
-            int dur = 30;
-            if(req.duration > 0) dur = req.duration / 1000;
-
-            if (TimedThread.isRunning(TimedType.WORKERS_FAST)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
-            if (!CPlayerData.m_IsShopOnceOpen) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//workers leave when store closed
-
-            new Thread(new TimedThread(req.GetReqID(), TimedType.WORKERS_FAST, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
         
@@ -762,9 +721,9 @@ namespace BepinControl
                 {
                     if (enteredText.Length == 5) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3], enteredText[4]);
                     else if (enteredText.Length == 4) item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3]);//playmat, Plushie
-                    else if (enteredText.Length == 3) item = string.Join(enteredText[1], enteredText[2]);//single items like Freshener
+                    else if (enteredText.Length == 3) item = string.Join(" ", enteredText[1], enteredText[2]);//single items like Freshener
                     else item = enteredText[1];
-                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Item database
+                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Item database, make sure to search for item, in case name changes
                 }
                 catch
                 {
@@ -782,13 +741,13 @@ namespace BepinControl
                     Quaternion rotation = pos.rotation;
                     if (item2.isBigBox)
                     {
-                        InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.2f, position.y+ 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                        InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y+ 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
                         interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, 64);
                         interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
                     }
                     else
                     {
-                        InteractablePackagingBox_Item interactablePackagingBox_Item2 = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxSmallPrefab, new Vector3(position.x + 1.2f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                        InteractablePackagingBox_Item interactablePackagingBox_Item2 = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxSmallPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
                         interactablePackagingBox_Item2.FillBoxWithItem(item2.itemType, 32);
                         interactablePackagingBox_Item2.name = interactablePackagingBox_Item2.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
                     }
