@@ -499,13 +499,13 @@ namespace BepinControl
             {
                 if (LargeBills && ___m_CustomerCash.m_IsCard == false)//only trigger on cash effects, 
                 {
-                    float size = UnityEngine.Random.Range(12.0f, 30.0f);//match cash to cards, to make it more noticeable. 
+                    float size = UnityEngine.Random.Range(26.0f, 42.0f);//match cash to cards, to make it more noticeable. 
                     ___m_CustomerCash.m_CashModel.transform.localScale = new Vector3(size, size, size);
                     ___m_CustomerCash.m_CashOutlineModel.transform.localScale = new Vector3(size, size, size);
                 }
                 else if (LargeBills && ___m_CustomerCash.m_IsCard == true)//Trigger on Card Payments too
                 {
-                    float size = UnityEngine.Random.Range(12.0f, 30.0f);//make cards more noticeable
+                    float size = UnityEngine.Random.Range(26.0f, 42.0f);//make cards more noticeable
                     ___m_CustomerCash.m_CardModel.transform.localScale = new Vector3(size, size, size);
                     ___m_CustomerCash.m_CardOutlineModel.transform.localScale = new Vector3(size, size, size);
                 }
