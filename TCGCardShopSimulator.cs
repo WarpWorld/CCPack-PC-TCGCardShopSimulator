@@ -29,7 +29,7 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Spawn Customer", "spawn") { Description = "Spawns a New Customer", Category = "Spawn", Price = 100 },
                 new("Spawn Stinky Customer", "spawnsmelly") { Description = "Spawns a New Extra Stinky Customer", Category = "Spawn", Price = 125 },
 
-                new("Teleport Player out of Store", "teleport") { Description = "Teleports the Player over the street", Category = "Player", Price = 50 },
+                new("Teleport Player Away", "teleport") { Description = "Teleports the Player out of the Store Randomly", Category = "Player", Price = 50 },
                 new("Throw Player Item", "throwitem") { Description = "Make the player throw their item!", Category = "Player", Price = 25 },
 
                 new("Give $100", "give_100") { Description = "Give the Player $100", Category = "Money", Price = 10 },
@@ -45,6 +45,7 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Force Exact Change", "exactchange") { Description = "Customers pay with Exact amounts when using Cash!", Duration = 60, Category = "Payments", Price = 100 },
                 new("Make the streamer do the Math", "forcemath") { Description = "Force The Player to do Math", Duration = 30, Category = "Payments", Price = 100 },
 
+                new("Give Empty Box", "giveempty") { Description = "Send the player an Empty Box!", Category = "Items", Image = "box", Price = 100 },
                 //new("Give 32 Common Packs", "give_common_pack_(32)") { Description = "Send the player a Common Pack (32)", Category = "Items", Image = "box", Price = 100 },
                 new("Give 64 Common Packs", "give_common_pack_(64)") { Description = "Send the player a Common Pack (64)", Category = "Items", Image = "box", Price = 100 },
                 //new("Give Common Box (4)", "give_common_box_(4)") { Description = "Send the player a Common Box (4)", Category = "Items", Image = "box", Price = 100 },
@@ -252,8 +253,11 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Set Language to Chinese (Traditional)", "language_chineset") { Description = "Set Language to Chinese (Traditional).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 new("Set Language to Korean", "language_korean") { Description = "Set Language to Korean.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 new("Set Language to Dutch", "language_dutch") { Description = "Set Language to Dutch.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
-
+                
                 new("Hey Ohhh", "speak_heyoo") { Description = "Speak!", Category = "Speak", Price = 25 },
+
+                new("Hire new Worker", "hireworker") { Description = "Hire a New Employee!", Category = "Misc", Price = 25 },
+                new("Fire Worker", "fireworker") { Description = "Fire a Random Employee", Category = "Misc", Price = 25 },
 
                 new("Send Small Cabinet", "furniture_small_cabinet") { Description = "Send the Player a Small Cabinet!", Category = "Furniture", Price = 250 },
                 new("Send Small Metal Rack", "furniture_small_metal_rack") { Description = "Send the player a Small Metal Rack", Category = "Furniture", Price = 250 },
