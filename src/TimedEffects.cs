@@ -24,13 +24,12 @@ namespace BepinControl
         FORCE_MATH,
         INVERT_X,
         INVERT_Y,
-        SENSITIVITY_LOW,
-        SENSITIVITY_HIGH,
         FORCE_EXACT_CHANGE,
         FORCE_REQUIRE_CHANGE,
         FORCE_LARGE_BILLS,
         ALLOW_MISCHARGE,
-        WORKERS_FAST
+        WORKERS_FAST,
+        HUGE_BOXES
     }
 
 
@@ -83,6 +82,14 @@ namespace BepinControl
                         });
                         break;
                     }
+                //case TimedType.GAME_ULTRA_SLOW://Something to look at, altering Timescale in game
+                   // {
+                        //TestMod.ActionQueue.Enqueue(() =>
+                        //{
+                           // CGameManager.Instance.m_TimeScale = (int)0.1;
+                       // });
+                        //break;
+                   // }
                 case TimedType.FORCE_CASH:
                     {
                         TestMod.ActionQueue.Enqueue(() =>
@@ -101,7 +108,7 @@ namespace BepinControl
                         });
                         break;
                     }
-                case TimedType.WORKERS_FAST:
+                case TimedType.WORKERS_FAST://Untested, still wip.
                     {
                         TestMod.ActionQueue.Enqueue(() =>
                         {

@@ -86,13 +86,12 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
             CustomerManager CM = CustomerManager.Instance;
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
             if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    
-
                     if (req.targets != null)
                     {
                         if (req.targets[0].service == "twitch") {
@@ -101,7 +100,10 @@ namespace BepinControl
                     }
                     TestMod.NameOverride = req.viewer;
                     TestMod.isSmelly = false;
+                    CustomerManager.Instance.m_CustomerCountMax = + 1;
+                    callFunc(CustomerManager.Instance, "AddCustomerPrefab", null);
                     Customer newCustomer = CM.GetNewCustomer();
+
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
                 });
@@ -140,6 +142,7 @@ namespace BepinControl
                     if (Smelly != null)
                     {
                         Smelly.SetSmelly();
+                        CustomerManager.Instance.AddToSmellyCustomerList(Smelly);
                         Smelly.name = req.viewer;
                     }
                     TestMod.isSmelly = false;
@@ -155,7 +158,102 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        public static CrowdResponse HireWorker(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            bool found = false;
+            int workerCount =0;
+            Worker workerid = null;
+            List<Worker> m_WorkerList = WorkerManager.GetWorkerList();
+            if (!found)
+            {
+                try
+                {
+                    workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
+                    if (!m_WorkerList[workerCount].isActiveAndEnabled)
+                    {
+                        workerid = m_WorkerList[workerCount];
+                        found = true;
+                    }
+                }
+                catch
+                {
+                    status = CrowdResponse.Status.STATUS_RETRY;
+                }
 
+            }
+            if (!found || workerid == null) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Workers available");
+            if (found)
+            {
+                try
+                {
+                    TestMod.ActionQueue.Enqueue(() =>
+                    {
+
+                        workerid.ActivateWorker(true);
+                        workerid.m_IsActive = true;
+                        workerid.gameObject.SetActive(true);
+                        workerid.transform.position = InteractionPlayerController.Instance.m_WalkerCtrl.transform.position;
+                        CPlayerData.SetIsWorkerHired(workerCount, true);
+                        
+                    });
+                }
+                catch (Exception e)
+                {
+                    TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                    status = CrowdResponse.Status.STATUS_RETRY;
+                }
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse FireWorker(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            bool found = false;
+            Worker workerid = null;
+            int workerCount = 0;
+            List<Worker> m_WorkerList = WorkerManager.GetWorkerList();
+            if (!found)
+            {
+                try
+                {
+                    workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
+                    if (m_WorkerList[workerCount].m_IsActive && !LightManager.GetHasDayEnded())
+                    {
+                        workerid = m_WorkerList[workerCount];
+                        found = true;
+                    }
+                }
+                catch
+                {
+                    status = CrowdResponse.Status.STATUS_RETRY;
+                }
+
+            }
+            if (!found || workerid == null) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Workers available");
+            if (found)
+            {
+                try
+                {
+                    TestMod.ActionQueue.Enqueue(() =>
+                    {
+                        workerid.FireWorker();
+                        workerid.DeactivateWorker(); 
+                        workerid.m_IsActive = false;
+                        workerid.gameObject.SetActive(false);
+                        CPlayerData.SetIsWorkerHired(workerCount, false);
+                    });
+                }
+                catch (Exception e)
+                {
+                    TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                    status = CrowdResponse.Status.STATUS_RETRY;
+                }
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
         public static CrowdResponse LargeBills(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -592,7 +690,7 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -619,6 +717,36 @@ namespace BepinControl
                 {
                     if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, 64, item2.isBigBox);
                     else RestockManager.SpawnPackageBoxItem(item2.itemType, 32, item2.isBigBox);
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse GiveEmpty(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            var item = "common pack (64)";
+            RestockData item2 = null;
+            string[] enteredText = req.code.Split('_');
+            if (enteredText.Length > 0)
+                try
+                {
+                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Find a random item to instantiate
+                }
+                catch
+                {
+                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to Find Item in Array.");
+                }
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    RestockManager.SpawnPackageBoxItem(item2.itemType, 0, true);//Have to call item2.itemType, 0 in box, true for bigbox.
                 });
             }
             catch (Exception e)

@@ -76,6 +76,7 @@ namespace BepinControl
                 {"take_1000", CrowdDelegates.TakeMoney },
                 {"take_10000", CrowdDelegates.TakeMoney },
 
+                {"giveempty", CrowdDelegates.GiveEmpty },
                 //{"give_common_pack_(32)", CrowdDelegates.GiveItem },
                 {"give_common_pack_(64)", CrowdDelegates.GiveItem },
                 //{"give_common_box_(4)", CrowdDelegates.GiveItem },
@@ -287,6 +288,8 @@ namespace BepinControl
 
                 {"speak_heyoo", CrowdDelegates.HeyOhh },
 
+                {"hireworker", CrowdDelegates.HireWorker },
+                {"fireworker", CrowdDelegates.FireWorker },
 
                 {"throwitem", CrowdDelegates.ThrowItem },
                 {"exactchange", CrowdDelegates.ExactChange },
@@ -311,6 +314,17 @@ namespace BepinControl
                 {"furniture_huge_personal_shelf", CrowdDelegates.GiveItemFurniture },
                 {"furniture_auto_scent_t1000", CrowdDelegates.GiveItemFurniture},
                 {"furniture_big_card_display", CrowdDelegates.GiveItemFurniture },
+
+                {"give_necromansters", CrowdDelegates.GiveItem},
+                {"giveatplayer_necromansters", CrowdDelegates.GiveItemAtPlayer },
+                {"give_mafia_works",CrowdDelegates.GiveItem },
+                {"giveatplayer_mafia_works",CrowdDelegates.GiveItemAtPlayer},
+                {"give_claim!",CrowdDelegates.GiveItem },
+                {"giveatplayer_claim!", CrowdDelegates.GiveItemAtPlayer },
+                {"give_system_gate_#1",CrowdDelegates.GiveItem },
+                {"giveatplayer_system_gate_#1",CrowdDelegates.GiveItemAtPlayer },
+                {"give_system_gate_#2",CrowdDelegates.GiveItem },
+                {"giveatplayer_system_gate_#2",CrowdDelegates.GiveItemAtPlayer },
             };
         }
 
@@ -318,14 +332,13 @@ namespace BepinControl
         {
             try
             {
-                CGameManager CGM = CSingleton<CGameManager>.Instance;
-                bool isFullyLoaded = CGM.m_IsGameLevel;
+                bool isFullyLoaded = CGameManager.Instance.m_IsGameLevel;
                 if (!isFullyLoaded) return false;
                 //make sure the game is in focus otherwise don't let effects trigger
                 if (!TestMod.isFocused) return false;
                 //add check for whether the game is in a state it can accept effects
-                PauseScreen PS = CSingleton<PauseScreen>.Instance;
-                bool isPaused = PS.m_ScreenGrp.activeSelf   ;
+                PauseScreen PS = PauseScreen.Instance;
+                bool isPaused = PauseScreen.Instance.m_ScreenGrp.activeSelf   ;
                 if (isPaused) return false;
 
             }
@@ -462,7 +475,10 @@ namespace BepinControl
             {
                 try
                 {
-
+                    if (!inGame)
+                    {
+                        Thread.Yield();
+                    }
                     CrowdRequest req = null;
                     lock (Requests)
                     {
