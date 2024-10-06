@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 
 namespace BepinControl
@@ -319,6 +320,8 @@ namespace BepinControl
 
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
 
+            bool m_IsCreditCardMode = (bool)getProperty(CSingleton<UI_CreditCardScreen>.Instance, "m_IsCreditCardMode");
+            if (m_IsCreditCardMode) { TestMod.mls.LogInfo("Tried to Teleport in Card reader"); return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in card Machine"); }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -515,7 +518,7 @@ namespace BepinControl
         {
             int dur = 30;
             if (req.duration > 0) dur = req.duration / 1000;
-
+            if (CSingleton<CollectionBinderUI>.Instance.m_CollectionAlbum.gameObject.activeSelf) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in Binder");
             if (TimedThread.isRunning(TimedType.HIGH_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             if (TimedThread.isRunning(TimedType.LOW_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
