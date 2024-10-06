@@ -19,7 +19,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.7.0";
+        private const string modVersion = "1.0.8.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -185,7 +185,7 @@ namespace BepinControl
 
 
 
-        private static List<string> allowedUsernames = new List<string> { "jaku", "s4turn", "crowdcontrol" };
+        private static List<string> allowedUsernames = new List<string> { "jaku", "s4turn", "crowdcontrol", "theunknowncod3r" };
 
         public static void StartTwitchChatListener()
         {
@@ -209,12 +209,13 @@ namespace BepinControl
 
                 while (true)
                 {
+
                     if (twitchStream.DataAvailable)
                     {
                         var message = twitchReader.ReadLine();
                         if (message != null)
                         {
-     
+
                             if (message.StartsWith("PING"))
                             {
                                 twitchWriter.WriteLine("PONG :tmi.twitch.tv");
@@ -263,26 +264,36 @@ namespace BepinControl
                                         {
                                             TestMod.ActionQueue.Enqueue(() =>
                                             {
-                                                List<Customer> customers = (List<Customer>)CrowdDelegates.getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
-
-                                                if (customers.Count >= 1)
+                                                try
                                                 {
-                                                    foreach (Customer customer in customers)
-                                                    {
-                                                        if (customer.isActiveAndEnabled && customer.name.ToLower() == username.ToLower())
-                                                        {
-                                                            //string displayMessage = $"{badgeDisplay} {username}: {chatMessage}";
-                                                            string lowerChatMessage = chatMessage.ToLower();
-                                                            if (triggerWords.Any(word => lowerChatMessage.Contains(word)))
-                                                            {
-                                                                if (!customer.IsSmelly()) {
-                                                                    MakeCustomerSmellyTemporarily(customer, 5f);
-                                                                }
-                                                            }
 
-                                                            CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(chatMessage, 1.8f, customer.transform);
+                                                    List<Customer> customers = (List<Customer>)CrowdDelegates.getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
+
+                                                    if (customers.Count >= 1)
+                                                    {
+                                                        foreach (Customer customer in customers)
+                                                        {
+                                                            if (customer.isActiveAndEnabled && customer.name.ToLower() == username.ToLower() && customer.IsInsideShop())
+                                                            {
+                                                                //string displayMessage = $"{badgeDisplay} {username}: {chatMessage}";
+                                                                string lowerChatMessage = chatMessage.ToLower();
+                                                                if (triggerWords.Any(word => lowerChatMessage.Contains(word)))
+                                                                {
+                                                                    if (!customer.IsSmelly())
+                                                                    {
+                                                                        MakeCustomerSmellyTemporarily(customer, 5f);
+                                                                    }
+                                                                }
+
+                                                                CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(chatMessage, 1.8f, customer.transform);
+                                                            }
                                                         }
                                                     }
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    //is the customer active?
+                                                    //mls.LogInfo(e.ToString());
                                                 }
                                             });
                                         }
@@ -291,7 +302,6 @@ namespace BepinControl
                             }
                         }
                     }
-
                     Thread.Sleep(50);
                 }
             }
