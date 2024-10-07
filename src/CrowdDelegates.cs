@@ -1,11 +1,18 @@
+using BepInEx;
+using HeathenEngineering.SteamworksIntegration;
 using I2.Loc;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using TMPro;
 using UnityEngine;
+using Dummiesman;
+using static UnityEngine.ImageConversion;
+using System.Collections;
+using System.Net;
 
 
 namespace BepinControl
@@ -837,12 +844,266 @@ namespace BepinControl
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 
-        public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
+
+        private static Texture2D LoadTexture(string path)
+        {
+            if (File.Exists(path))
+            {
+                byte[] fileData = File.ReadAllBytes(path);
+                Texture2D texture = new Texture2D(2, 2);  // Create a new Texture2D
+                if (texture.LoadImage(fileData))  // Load the image from the file
+                {
+                    return texture;  // Return the loaded texture
+                }
+            }
+            Debug.LogError("Texture not found or failed to load: " + path);
+            return null;  // Return null if the texture couldn't be loaded
+        }
+
+
+
+
+
+public class InteractableObject2 : MonoBehaviour
+    {
+        private static InteractableObject2 currentlyHeldObject = null; 
+
+        private bool isHeld = false;
+        private Transform playerCamera;
+        private Rigidbody rb;
+        private Color originalColor;
+
+        private Renderer renderer;
+        private Collider breadCollider;  
+
+        private Transform playerTransform;
+
+        private float maxPickupDistance = 3.5f;
+
+        private float moveSpeed = 5.0f;
+
+        private bool isHovered = false;
+
+
+
+        private float interactionDelay = 1.0f;
+
+            void Start()
+            {
+                playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+
+                playerCamera = Camera.main?.transform;
+
+                if (playerCamera == null)
+                {
+                    playerCamera = FindObjectOfType<Camera>()?.transform;
+                    if (playerCamera == null)
+                    {
+                        return;
+                    }
+                }
+
+                rb = GetComponent<Rigidbody>();
+
+
+                renderer = GetComponent<Renderer>();
+                if (renderer != null && renderer.material != null)
+                {
+                    originalColor = renderer.material.color;
+                }
+
+
+                breadCollider = GetComponent<Collider>();
+                if (breadCollider == null)
+                {
+                    breadCollider = gameObject.AddComponent<BoxCollider>();
+                }
+
+            }
+
+
+
+        void Update()
+        {
+ 
+            if (isHeld)
+            {
+                SmoothlyHoldObjectInFront();
+
+          
+                if (Input.GetKeyDown(KeyCode.F))
+                {
+                    ThrowObject();
+                }
+
+                if (Input.GetKeyDown(KeyCode.E))
+                {
+                    EatObject();
+                }
+            }
+            else
+            {
+                if (Input.GetMouseButtonDown(0))  
+                {
+                    if (currentlyHeldObject == null) 
+                    {
+                        TryPickupObjectUnderMouse();
+                    }
+                }
+            }
+        }
+
+        private void SmoothlyHoldObjectInFront()
+        {
+            rb.isKinematic = true; 
+            breadCollider.enabled = false;
+
+            Vector3 targetPosition = playerCamera.position + playerCamera.forward * 0.7f;
+            targetPosition.y -= 0.2f; 
+
+          
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+
+            transform.rotation = Quaternion.LookRotation(playerCamera.forward);
+            transform.Rotate(Vector3.right, 90.0f); 
+        }
+
+        private void TryPickupObjectUnderMouse()
+        {
+            Ray ray = playerCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxPickupDistance);
+
+            bool breadHit = false;
+
+            foreach (RaycastHit hit in hits)
+            {
+                Debug.Log("Raycast hit: " + hit.collider.gameObject.name);
+
+                if (hit.collider != null && hit.collider.gameObject == gameObject)
+                {
+                    breadHit = true; 
+                    Debug.Log("Bread object hit, attempting to pick it up.");
+                    break; 
+                }
+            }
+
+            if (breadHit)
+            {
+                PickUpObject(); 
+            }
+            else
+            {
+                Debug.Log("No bread object found by the raycast.");
+            }
+        }
+
+        private void PickUpObject()
+        {
+            isHeld = true;
+            currentlyHeldObject = this;  
+            rb.isKinematic = true; 
+            breadCollider.enabled = false;  
+            Debug.Log("Bread object picked up.");
+        }
+
+        private void ReleaseObject()
+        {
+            Debug.Log("Attempting to release the bread object.");
+
+            isHeld = false;
+            currentlyHeldObject = null;  
+
+           
+            rb.isKinematic = false;
+            breadCollider.enabled = true;
+
+            Debug.Log("Bread object released: Kinematic = " + rb.isKinematic + ", Collider enabled = " + breadCollider.enabled);
+
+            
+            StartCoroutine(IgnorePlayerCollisionTemporarily());
+        }
+
+        private void ThrowObject()
+        {
+            Debug.Log("Throwing the bread object.");
+            rb.isKinematic = false; 
+
+            Vector3 throwForce = playerCamera.forward * 10f; 
+            rb.AddForce(throwForce, ForceMode.Impulse);
+
+         
+            ReleaseObject();
+        }
+
+        private void EatObject()
+        {
+
+    
+
+            transform.rotation = Quaternion.LookRotation(playerCamera.forward);
+            transform.Rotate(Vector3.right, 90.0f); // Rotate to lay flat on the camera
+
+
+
+
+            StartCoroutine(EatAndDestroy());
+        }
+
+        private IEnumerator EatAndDestroy()
+        {
+            float elapsedTime = 0f;
+            float duration = 1.0f;
+
+            Vector3 initialPosition = transform.position;
+
+            while (elapsedTime < duration)
+            {
+                transform.position = Vector3.Lerp(initialPosition, playerCamera.position + playerCamera.forward * 0.5f, elapsedTime / duration);
+                transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y * 0.95f, transform.localScale.z); // Slightly reduce height
+                elapsedTime += Time.deltaTime;
+
+                yield return null; 
+            }
+
+
+            Destroy(gameObject);
+        }
+
+        private IEnumerator IgnorePlayerCollisionTemporarily()
+        {
+            Collider playerCollider = playerTransform.GetComponent<Collider>();
+
+            if (playerCollider != null)
+            {
+                Physics.IgnoreCollision(breadCollider, playerCollider, true);  // Ignore collisions
+
+                yield return new WaitForSeconds(interactionDelay);
+
+                Physics.IgnoreCollision(breadCollider, playerCollider, false);
+                Debug.Log("Bread object interaction with player re-enabled.");
+            }
+            else
+            {
+                Debug.LogError("Player collider not found.");
+            }
+        }
+    }
+
+
+
+
+
+
+
+    public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
             var item = "";
             RestockData item2 = null;
+
+
+
             string[] enteredText = req.code.Split('_');
             if (enteredText.Length > 0)
             {
@@ -862,25 +1123,180 @@ namespace BepinControl
             }
             try
             {
+   
+
+        
+            
+
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                    
                     Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
                     Vector3 position = pos.position;
                     Quaternion rotation = pos.rotation;
+
+
+
+                    /* bread test 
+                    string objPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.obj");
+                    string mtlPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.mtl");
+                    string pngPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.png");
+
+                    if (File.Exists(objPath))
+                    {
+                        GameObject originalBread = null;
+
+                        // Load the OBJ file once to get the original object
+                        using (FileStream objStream = new FileStream(objPath, FileMode.Open, FileAccess.Read))
+                        using (FileStream mtlStream = new FileStream(mtlPath, FileMode.Open, FileAccess.Read))
+                        {
+                            originalBread = new OBJLoader().Load(objStream, mtlStream);
+
+                            if (originalBread == null)
+                            {
+                                Debug.LogError("Failed to load object. The OBJLoader returned null.");
+                                return;
+                            }
+
+                            // Set the scale of the original bread object
+                            originalBread.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);  // Uniform scaling
+                        }
+
+                        // Now spawn 30 copies of the original bread object
+                        for (int i = 0; i < 10; i++)  // Loop to spawn 30 breads
+                        {
+                            // Randomize height above the player, but keep X and Z the same as the player's position
+                            float spawnHeightAbovePlayer = UnityEngine.Random.Range(5.0f, 10.0f);  // Bread spawns 5 to 10 units above the player
+                            Vector3 spawnPosition = new Vector3(
+                                pos.position.x,             // Player's X position
+                                pos.position.y + spawnHeightAbovePlayer,  // Spawn above player
+                                pos.position.z              // Player's Z position
+                            );
+
+                            // Clone the original bread object to create a new instance
+                            GameObject breadInstance = UnityEngine.Object.Instantiate(originalBread, spawnPosition, Quaternion.identity);
+
+
+                            Renderer renderer = breadInstance.GetComponent<Renderer>();
+
+                            if (renderer != null)
+                            {
+                                if (renderer.material.shader.name != "Standard")
+                                {
+                                    renderer.material.shader = Shader.Find("Standard");  // Set the shader to Standard
+                                    Debug.Log("Shader set to Standard.");
+                                }
+
+
+                                if (renderer.material.mainTexture == null)  // Check if the texture didn't load
+                                {
+                                    Debug.LogWarning("Applying default texture to bread.");
+                                    Texture2D defaultTexture = LoadTexture(pngPath);
+                                    renderer.material.mainTexture = defaultTexture;
+                                }
+                            }
+
+
+                            // Add BoxCollider or MeshCollider to ensure the bread can collide with the floor
+                            if (breadInstance.GetComponent<Collider>() == null)
+                            {
+                                // Option 1: Add a BoxCollider (simpler, usually works well)
+                                BoxCollider boxCollider = breadInstance.AddComponent<BoxCollider>();
+
+                                // Option 2: Use MeshCollider with convex (if you need complex collision)
+                                // MeshCollider meshCollider = breadInstance.AddComponent<MeshCollider>();
+                                // meshCollider.convex = true;  // Convex is required for dynamic objects
+                            }
+
+                            // Add Rigidbody to the bread instance for physics
+                            Rigidbody rb = breadInstance.GetComponent<Rigidbody>();
+                            if (rb == null)
+                            {
+                                rb = breadInstance.AddComponent<Rigidbody>();
+                                rb.mass = 1.0f;
+                                rb.useGravity = true;  // Enable gravity
+                                rb.drag = 0.5f;        // Adjust drag to control movement
+                                rb.angularDrag = 0.05f;  // Adjust angular drag to slow rotation
+                            }
+
+                            // Optional: Make the bread interactable if needed
+                            breadInstance.AddComponent<InteractableObject2>();  // Script to handle interaction (optional)
+                        }
+
+                       
+                    }
+                    else
+                    {
+                        Debug.LogError("OBJ file not found: " + objPath);
+                    }
+
+
+                    */
+
+
+
+
+
+
+                    
+
                     if (item2.isBigBox)
                     {
-                        InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y+ 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+
+
+                        InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
                         interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, 64);
                         interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
+
+
+                        /*
+                         * auto open test
+                        FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
+
+
+                        if (itemListField != null)
+                        {
+                            List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
+
+
+
+
+                            if (spawnedItems != null)
+                            {
+                                foreach (Item _item in spawnedItems)
+                                {
+
+
+                                    if (_item.GetItemType() == EItemType.RareCardPack)
+                                    {
+                                        CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(_item);
+                                        interactablePackagingBox_Item.OnDestroyed();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        */
+
                     }
                     else
                     {
                         InteractablePackagingBox_Item interactablePackagingBox_Item2 = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxSmallPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
                         interactablePackagingBox_Item2.FillBoxWithItem(item2.itemType, 32);
                         interactablePackagingBox_Item2.name = interactablePackagingBox_Item2.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
+
+
+
+
                     }
+
+
+                   
+
+
+
                 });
+                
 
             }
             catch (Exception e)
