@@ -77,6 +77,7 @@ namespace BepinControl
                 {"take_10000", CrowdDelegates.TakeMoney },
 
                 {"giveempty", CrowdDelegates.GiveEmpty },
+                {"giveplayerhugeempty", CrowdDelegates.SendHugeEmpty },
                 {"emptycleaners", CrowdDelegates.EmptyCleansers },
                 //{"give_common_pack_(32)", CrowdDelegates.GiveItem },
                 {"give_common_pack_(64)", CrowdDelegates.GiveItem },
@@ -338,7 +339,7 @@ namespace BepinControl
                 {"openpack_destiny_epic_pack", CrowdDelegates.OpenCardPack },
                 {"openpack_destiny_legend_pack", CrowdDelegates.OpenCardPack },
 
-                {"spanw_bread", CrowdDelegates.SpawnBread },
+                {"spawn_bread", CrowdDelegates.SpawnBread },
 
 
 

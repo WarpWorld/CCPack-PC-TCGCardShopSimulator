@@ -143,6 +143,7 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Give Playmat (Lunight)", "give_playmat_(lunight)") { Description = "Send the player a Lunight Playmat", Category = "Items", Image = "box", Price = 100 },
 
                 //new("Spawn 32 Common Packs on Player", "giveatplayer_common_pack_(32)") { Description = "Send the player a Common Pack (32) at their feet.", Category = "Player Spawn", Image = "box", Price = 250 },
+                new("Spawn a Huge Empty Box to the Player", "giveplayerhugeempty") { Description = "Send the player a HUGE empty Box.", Category = "Player Spawn", Image = "box", Price = 250 },
                 new("Spawn 64 Common Packs on Player", "giveatplayer_common_pack_(64)") { Description = "Send the player a Common Pack (64) at their feet.", Category = "Player Spawn", Image = "box", Price = 250 },
                 //new("Spawn Common Box (4) on Player", "giveatplayer_common_box_(4)") { Description = "Send the player a Common Box (4) at their feet.", Category = "Player Spawn", Image = "box", Price = 250 },
                 new("Spawn Common Box (8) on Player", "giveatplayer_common_box_(8)") { Description = "Send the player a Common Box (8) at their feet.", Category = "Player Spawn", Image = "box", Price = 250 },
