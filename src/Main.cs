@@ -631,6 +631,24 @@ namespace BepinControl
             }
         }
 
+        [HarmonyPatch(typeof(CardOpeningSequence))]
+        [HarmonyPatch("Update")]
+        class Patch_CardOpeningSequence_Update
+        {
+            static void Postfix(CardOpeningSequence __instance)
+            {
+                if (!autoOpenCards) return;
+                var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                autoFireField.SetValue(__instance, true);
+
+                var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                autoFireKeydown.SetValue(__instance, true);
+
+                //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
+            }
+        }
+
+
         [HarmonyPatch(typeof(CustomerManager), "GetCustomerExactChangeChance")]
         public static class HarmonyPatch_CustomerManager_GetCustomerExactChangeChance
         {
