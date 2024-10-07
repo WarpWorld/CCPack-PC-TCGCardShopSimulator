@@ -4,12 +4,13 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using System.Threading;
-using UnityEngine.EventSystems;
 using UnityEngine;
 using TMPro;
 using System.Net.Sockets;
 using System.IO;
 using System.Linq;
+using UnityEngine.EventSystems;
+using Random = UnityEngine.Random;
 
 namespace BepinControl
 {
@@ -30,25 +31,34 @@ namespace BepinControl
         public static bool loadedIntoWorld = false;
         public static bool isFocused = true;
         public static bool doneItems = false; //comment out, keep for future use if necessary
+
         public static bool ForceMath = false;
         public static bool WorkersFast = false;
         public static bool ForceUseCash = false;
         public static bool ForceUseCredit = false;
         public static bool ExactChange = false;
         public static bool LargeBills = false;
-        public static bool isWarehouseUnlocked = false;
+        public static bool CustomersOverpay = false;
+
         public static bool isSmelly = false;
+
         public static Vector3 oldcashScale = new Vector3(6.408165f, 41.87513f, 8.071795f);//cash size fix
         public static Vector3 oldcashScaleOutline = new Vector3(6.598893f, 43.12251f, 8.312037f);//cash size fix
         public static Vector3 oldCardScale = new Vector3(5.760878f, 7.510158f, 3.336215f);//card size fix
         public static Vector3 oldCardScaleOutline = new Vector3(5.897457f, 8.062623f, 3.415312f);//card size fix
+
         public static int WareHouseRoomsUnlocked = 0;
+        public static bool isWarehouseUnlocked = false;
         public static int ShopRoomUnlocked = 0;
+
         public static string NameOverride = "";
+
         public static string OrgLanguage = "";
         public static string NewLanguage = "";
+
         public static float OrigSensJS = 0f;
         public static float OrigSensMS = 0f;
+
         public static bool HasPrintedScales = false;
         public static bool isIrcConnected = false;
         private static bool isChatConnected = false;
@@ -131,6 +141,14 @@ namespace BepinControl
             UnityEngine.Object.Destroy(currentTextObject, 3f);
         }
 
+        [HarmonyPatch(typeof(TitleScreen), "Start")]
+        public static class TitleScreenPatch
+        {
+            public static void Postfix(ref TextMeshProUGUI ___m_VersionText)
+            {
+                ___m_VersionText.text += "\nCrowd Control version: v" + TestMod.modVersion;
+            }
+        }
         public class FaceCamera : MonoBehaviour
         {
             private Camera mainCamera;
@@ -399,19 +417,27 @@ namespace BepinControl
             }
 
 
-             if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
-             {
-                 foreach (var cardPack in CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
-                 {
-                     TestMod.mls.LogInfo(cardPack.name);
+             //if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
+             //{
+                // foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
+                 //{
+                     //TestMod.mls.LogInfo("Name: "+cardPack.name+", Amount: "+cardPack.amount);
 
-                 }
-                //foreach (var furniture in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
-                //{
-                    //TestMod.mls.LogInfo(furniture.name);
-                //}
-                doneItems = true;
-             }
+                 //}
+                 //foreach (var furniture in InventoryBase.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
+                // {
+                    // TestMod.mls.LogInfo(furniture.name);
+                // }
+                 //foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
+                // {
+                     //TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+                 //}
+               //  foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
+                // {
+                    // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+                // }
+                //doneItems = true;
+             //}
 
             while (ActionQueue.Count > 0)
             {
@@ -428,132 +454,6 @@ namespace BepinControl
                 }
             }
 
-        }
-        [HarmonyPatch(typeof(TitleScreen), "Start")]
-        public static class TitleScreenPatch
-        {
-            public static void Postfix(ref TextMeshProUGUI ___m_VersionText)
-            {
-               ___m_VersionText.text += "\nCrowd Control version: v" + TestMod.modVersion;
-            }
-        }
-
-        [HarmonyPatch(typeof(EventSystem), "OnApplicationFocus")]
-        public static class EventSystem_OnApplicationFocus_Patch
-        {
-            public static void Postfix(bool hasFocus)
-            {
-                isFocused = hasFocus;
-            }
-        }
-
-
-        [HarmonyPatch(typeof(UI_CashCounterScreen), "UpdateMoneyChangeAmount")] 
-        public class UI_CashCounterScreen_Patch
-        {
-            static void Postfix(UI_CashCounterScreen __instance)
-            {
-                if (!ForceMath) return;
-                TextMeshProUGUI text = __instance.m_ChangeToGiveAmountText;
-
-                if (text != null)
-                {
-                    text.text = "DO THE MATH";
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(InteractableCustomerCash), "SetIsCard")]
-        public static class SetIsCardPatch
-        {
-            public static void Prefix(ref bool isCard)
-            {
-                if (ForceUseCash)
-                {
-                    isCard = false;
-                    return;
-                }
-                if (ForceUseCredit)
-                {
-                    isCard = true;
-                    return;
-                }
-            }
-        }
-
-
-        [HarmonyPatch(typeof(InteractableCashierCounter), "StartGivingChange")]
-        public static class StartGivingChangePatch
-        {
-
-            public static void Prefix(InteractableCashierCounter __instance, ref bool ___m_IsUsingCard)
-            {
-
-                if (ForceUseCash)
-                {
-                    ___m_IsUsingCard = false;
-                }
-
-                if (ForceUseCredit)
-                {
-                    ___m_IsUsingCard = true;
-                }
-
-            }
-        }
-
-        [HarmonyPatch(typeof(Customer), "EvaluateFinishScanItem")]
-        public static class LargeBillsPatch
-        {
-            public static void Postfix(ref InteractableCustomerCash ___m_CustomerCash)
-            {
-                if (LargeBills && ___m_CustomerCash.m_IsCard == false)//only trigger on cash effects, 
-                {
-                    float size = UnityEngine.Random.Range(26.0f, 42.0f);//match cash to cards, to make it more noticeable. 
-                    ___m_CustomerCash.m_CashModel.transform.localScale = new Vector3(size, size, size);
-                    ___m_CustomerCash.m_CashOutlineModel.transform.localScale = new Vector3(size, size, size);
-                }
-                else if (LargeBills && ___m_CustomerCash.m_IsCard == true)//Trigger on Card Payments too
-                {
-                    float size = UnityEngine.Random.Range(26.0f, 42.0f);//make cards more noticeable
-                    ___m_CustomerCash.m_CardModel.transform.localScale = new Vector3(size, size, size);
-                    ___m_CustomerCash.m_CardOutlineModel.transform.localScale = new Vector3(size, size, size);
-                }
-                else if (!LargeBills)//revert to default sizes, can be grabbed via localscale.x,y,z and printing to log
-                {
-                    ___m_CustomerCash.m_CardModel.transform.localScale = oldCardScale;
-                    ___m_CustomerCash.m_CardOutlineModel.transform.localScale = oldCardScaleOutline;
-                    ___m_CustomerCash.m_CashModel.transform.localScale = oldcashScale;
-                    ___m_CustomerCash.m_CashOutlineModel.transform.localScale = oldcashScaleOutline;
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(CustomerManager), "GetCustomerExactChangeChance")]
-        public static class HarmonyPatch_CustomerManager_GetCustomerExactChangeChance
-        {
-            private static bool Prefix(ref int __result)
-            {
-                if (ExactChange)
-                {
-                    __result = 100;
-                    return false;
-                }
-                return true;
-            }
-        }
-        [HarmonyPatch(typeof(Customer), "GetRandomPayAmount")]
-        public static class HarmonyPatch_Customer_GetRandomPayAmount
-        {
-            private static bool Prefix(float limit, ref float __result)
-            {
-                if (ExactChange)
-                {
-                    __result = limit;
-                    return false;
-                }
-                return true;
-            }
         }
         public class NamePlateController : MonoBehaviour
         {
@@ -584,7 +484,7 @@ namespace BepinControl
         {
             public static void ApplyPatches(Harmony harmonyInstance)
             {
-                var original = typeof(CustomerManager).GetMethod("GetNewCustomer", new Type[] { });
+                var original = typeof(CustomerManager).GetMethod("GetNewCustomer", new Type[] {typeof(bool) });
                 var postfix = new HarmonyMethod(typeof(CustomerManagerPatches).GetMethod(nameof(GetNewCustomerPostfix), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
                 harmonyInstance.Patch(original, null, postfix);
             }
@@ -613,35 +513,165 @@ namespace BepinControl
 
                 GameObject namePlate = new GameObject("NamePlate");
                 namePlate.transform.SetParent(customer.transform);
-                namePlate.transform.localPosition = Vector3.up * 1.9f; 
+                namePlate.transform.localPosition = Vector3.up * 1.9f;
 
                 TextMeshPro tmp = namePlate.AddComponent<TextMeshPro>();
                 tmp.text = $"<b>{chatterName}</b>";
                 tmp.alignment = TextAlignmentOptions.Center;
                 tmp.fontSize = 1;
                 tmp.fontMaterial.EnableKeyword("OUTLINE_ON");
-                tmp.outlineColor = Color.black; 
+                tmp.outlineColor = Color.black;
                 tmp.outlineWidth = 0.2f;
                 if (isSmelly) tmp.color = new Color(0.0f, 1.0f, 0.0f);
- 
+
                 namePlate.AddComponent<NamePlateController>();
             }
         }
-
-
-
         [HarmonyPatch(typeof(InteractionPlayerController))]
         [HarmonyPatch("OnEnable")]
         class Patch_OnEnable
         {
             static void Postfix()
             {
-                loadedIntoWorld = true;
+                TestMod.loadedIntoWorld = true;
+            }
+        }
+
+        [HarmonyPatch(typeof(EventSystem), "OnApplicationFocus")]
+        public static class EventSystem_OnApplicationFocus_Patch
+        {
+            public static void Postfix(bool hasFocus)
+            {
+                TestMod.isFocused = hasFocus;
             }
         }
 
 
+        [HarmonyPatch(typeof(UI_CashCounterScreen), "UpdateMoneyChangeAmount")]
+        public class UI_CashCounterScreen_Patch
+        {
+            static void Postfix(UI_CashCounterScreen __instance)
+            {
+                if (!TestMod.ForceMath) return;
+                TextMeshProUGUI text = __instance.m_ChangeToGiveAmountText;
 
+                if (text != null)
+                {
+                    text.text = "DO THE MATH";
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(InteractableCustomerCash), "SetIsCard")]
+        public static class SetIsCardPatch
+        {
+            public static void Prefix(ref bool isCard)
+            {
+                if (TestMod.ForceUseCash)
+                {
+                    isCard = false;
+                    return;
+                }
+                if (TestMod.ForceUseCredit)
+                {
+                    isCard = true;
+                    return;
+                }
+            }
+        }
+
+
+        [HarmonyPatch(typeof(InteractableCashierCounter), "StartGivingChange")]
+        public static class StartGivingChangePatch
+        {
+
+            public static void Prefix(InteractableCashierCounter __instance, ref bool ___m_IsUsingCard)
+            {
+
+                if (TestMod.ForceUseCash)
+                {
+                    ___m_IsUsingCard = false;
+                }
+
+                if (TestMod.ForceUseCredit)
+                {
+                    ___m_IsUsingCard = true;
+                }
+
+            }
+        }
+
+        [HarmonyPatch(typeof(Customer), "EvaluateFinishScanItem")]
+        public static class LargeBillsPatch
+        {
+            public static void Postfix(ref InteractableCustomerCash ___m_CustomerCash)
+            {
+                if (TestMod.LargeBills && ___m_CustomerCash.m_IsCard == false)//only trigger on cash effects, 
+                {
+                    float size = UnityEngine.Random.Range(26.0f, 42.0f);//match cash to cards, to make it more noticeable. 
+                    ___m_CustomerCash.m_CashModel.transform.localScale = new Vector3(size, size, size);
+                    ___m_CustomerCash.m_CashOutlineModel.transform.localScale = new Vector3(size, size, size);
+                }
+                else if (TestMod.LargeBills && ___m_CustomerCash.m_IsCard == true)//Trigger on Card Payments too
+                {
+                    float size = Random.Range(26.0f, 42.0f);//make cards more noticeable
+                    ___m_CustomerCash.m_CardModel.transform.localScale = new Vector3(size, size, size);
+                    ___m_CustomerCash.m_CardOutlineModel.transform.localScale = new Vector3(size, size, size);
+                }
+                else if (!TestMod.LargeBills)//revert to default sizes, can be grabbed via localscale.x,y,z and printing to log
+                {
+                    ___m_CustomerCash.m_CardModel.transform.localScale = TestMod.oldCardScale;
+                    ___m_CustomerCash.m_CardOutlineModel.transform.localScale = TestMod.oldCardScaleOutline;
+                    ___m_CustomerCash.m_CashModel.transform.localScale = TestMod.oldcashScale;
+                    ___m_CustomerCash.m_CashOutlineModel.transform.localScale = TestMod.oldcashScaleOutline;
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(CustomerManager), "GetCustomerExactChangeChance")]
+        public static class HarmonyPatch_CustomerManager_GetCustomerExactChangeChance
+        {
+            private static bool Prefix(ref int __result)
+            {
+                if (TestMod.ExactChange)
+                {
+                    __result = 100;
+                    return false;
+                }
+                return true;
+            }
+        }
+        [HarmonyPatch(typeof(Customer), "GetRandomPayAmount")]
+        public static class HarmonyPatch_Customer_GetRandomPayAmount
+        {
+            private static bool Prefix(float limit, ref float __result)
+            {
+                if (TestMod.ExactChange)
+                {
+                    __result = limit;
+                    return false;
+                }
+                if (TestMod.CustomersOverpay)
+                {
+                    float badLuck = Random.Range(0.0f, 1.0f);
+                    float randomChange = Random.Range(0.00f, 0.99f);
+
+                    if (badLuck < 0.1f)
+                    {
+                        __result = __result + Random.Range(1, 100) + 1000 + randomChange;
+
+                    }
+                    else
+                    {
+                        __result = __result + Random.Range(1, 100) + randomChange;
+                    }
+
+                    return false;
+
+                }
+                return true;
+            }
+        }
     }
 
 }
