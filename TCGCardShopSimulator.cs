@@ -293,14 +293,14 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Send Big Card Display", "furniture_big_card_display") { Description = "Send Big Card Display", Category = "Furniture", Price = 250 },
 
 
-                new("Auto Open Common Pack", "openpack_common_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
-                new("Auto Open Rare Pack", "openpack_rare_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
-                new("Auto Open Epic Pack", "openpack_epic_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
-                new("Auto Open Legend Pack", "openpack_legend_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
-                new("Auto Open Destiny Common Pack", "openpack_destiny_common_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
-                new("Auto Open Destiny Rare Pack", "openpack_destiny_rare_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
-                new("Auto Open Destiny Epic Pack", "openpack_destiny_epic_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
-                new("Auto Open Destiny Legend Pack", "openpack_destiny_legend_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "AutoOpen", Price = 250 },
+                new("Auto Open Common Pack", "openpack_common_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else!", Category = "Auto Open", Price = 50 },
+                new("Auto Open Rare Pack", "openpack_rare_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 100 },
+                new("Auto Open Epic Pack", "openpack_epic_pack") { Description = "Automatically opens card pack when player is not doinga anything else.", Category = "Auto Open", Price = 150 },
+                new("Auto Open Legend Pack", "openpack_legend_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 200 },
+                new("Auto Open Destiny Common Pack", "openpack_destiny_common_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 50 },
+                new("Auto Open Destiny Rare Pack", "openpack_destiny_rare_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 100 },
+                new("Auto Open Destiny Epic Pack", "openpack_destiny_epic_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 150 },
+                new("Auto Open Destiny Legend Pack", "openpack_destiny_legend_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 200 },
 
                 new("Spawn Bread", "spawn_bread") { Description = "Spawn Bread!", Category = "Bread", Price = 250 },
 
