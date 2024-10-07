@@ -72,7 +72,7 @@ namespace BepinControl
                         if (customer.isActiveAndEnabled)
                         {
                             List<string> textList = new List<string> { "heyooo" };
-                            setProperty(customer, "m_IsChattyCustomer ", true);
+                            setProperty(customer, "m_IsChattyCustomer", true);
                             CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(textList[0], 1.8f, customer.transform);
                         }
                     }
@@ -207,8 +207,9 @@ namespace BepinControl
             {
                 try
                 {
-                    workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
-                    if (!m_WorkerList[workerCount].IsActive())
+                    Worker worker2 = m_WorkerList.Find(x => x.m_IsActive == false);
+                    workerCount = m_WorkerList.IndexOf(worker2);
+                    if (worker2 != null)
                     {
                         workerid = m_WorkerList[workerCount];
                         found = true;
@@ -256,8 +257,9 @@ namespace BepinControl
             {
                 try
                 {
-                    workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
-                    if (m_WorkerList[workerCount].IsActive() && !LightManager.GetHasDayEnded())
+                    Worker worker2 = m_WorkerList.Find(x=>x.m_IsActive);
+                    workerCount = m_WorkerList.IndexOf(worker2);
+                    if (worker2 != null && !LightManager.GetHasDayEnded())
                     {
                         workerid = m_WorkerList[workerCount];
                         found = true;
