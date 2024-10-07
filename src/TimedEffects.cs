@@ -108,15 +108,6 @@ namespace BepinControl
                         });
                         break;
                     }
-                case TimedType.WORKERS_FAST://Untested, still wip.
-                    {
-                        TestMod.ActionQueue.Enqueue(() =>
-                        {
-                            Worker worker = CSingleton<Worker>.Instance;
-                            worker.SetExtraSpeedMultiplier(4);
-                        });
-                        break;
-                    }
                 case TimedType.HIGH_FOV:
                     {
                         TestMod.ActionQueue.Enqueue(() =>
@@ -228,15 +219,6 @@ namespace BepinControl
                                     TestMod.mls.LogInfo(e.ToString());
                                     Timed.removeEffect(etype);
                                 }
-                            });
-                            break;
-                        }
-                        case TimedType.WORKERS_FAST:
-                        {
-                            TestMod.ActionQueue.Enqueue(() =>
-                            {
-                                Worker worker = CSingleton<Worker>.Instance;
-                                worker.SetExtraSpeedMultiplier(1);
                             });
                             break;
                         }

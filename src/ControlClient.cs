@@ -77,6 +77,7 @@ namespace BepinControl
                 {"take_10000", CrowdDelegates.TakeMoney },
 
                 {"giveempty", CrowdDelegates.GiveEmpty },
+                {"emptycleaners", CrowdDelegates.EmptyCleansers },
                 //{"give_common_pack_(32)", CrowdDelegates.GiveItem },
                 {"give_common_pack_(64)", CrowdDelegates.GiveItem },
                 //{"give_common_box_(4)", CrowdDelegates.GiveItem },
@@ -284,7 +285,7 @@ namespace BepinControl
                 {"language_chineses", CrowdDelegates.SetLanguage },
                 {"language_korean", CrowdDelegates.SetLanguage },
                 {"language_thai", CrowdDelegates.SetLanguage },
-                {"language_dutch", CrowdDelegates.SetLanguage },
+                //{"language_dutch", CrowdDelegates.SetLanguage },
 
                 {"speak_heyoo", CrowdDelegates.HeyOhh },
 
@@ -338,7 +339,7 @@ namespace BepinControl
                 if (!TestMod.isFocused) return false;
                 //add check for whether the game is in a state it can accept effects
                 PauseScreen PS = PauseScreen.Instance;
-                bool isPaused = PauseScreen.Instance.m_ScreenGrp.activeSelf   ;
+                bool isPaused = PauseScreen.Instance.m_ScreenGrp.activeSelf;
                 if (isPaused) return false;
 
             }
