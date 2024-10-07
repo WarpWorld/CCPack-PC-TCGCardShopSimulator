@@ -889,7 +889,206 @@ namespace BepinControl
             return null;  // Return null if the texture couldn't be loaded
         }
 
+        public static CrowdResponse OpenCardPack(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            string itemName = "";
+            RestockData spawnItem = null;
 
+            string[] codeParts = req.code.Split('_');
+
+            if (codeParts.Length > 1)
+            {
+                try
+                {
+                    int itemNameParts = Math.Min(codeParts.Length - 1, 4);
+
+                    itemName = string.Join(" ", codeParts.Skip(1).Take(itemNameParts));
+
+                    spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList
+                        .Find(item => item.name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+
+                    if (spawnItem == null)
+                    {
+                        status = CrowdResponse.Status.STATUS_FAILURE;
+                        message = "Cannot find card pack to spawn.";
+                        return new CrowdResponse(req.GetReqID(), status, message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    status = CrowdResponse.Status.STATUS_FAILURE;
+                    message = "Unable to spawn at player.";
+                    return new CrowdResponse(req.GetReqID(), status, message);
+                }
+            }
+
+            InteractionPlayerController interactionPlayerController = CSingleton<InteractionPlayerController>.Instance;
+
+
+
+            if (interactionPlayerController.m_CurrentGameState != EGameState.DefaultState)
+            {
+
+                status = CrowdResponse.Status.STATUS_RETRY;
+                message = "";
+                return new CrowdResponse(req.GetReqID(), status, message);
+            }
+
+            try
+            {
+
+
+                Debug.Log(interactionPlayerController.m_CurrentGameState);
+
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+
+                    Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+                    Vector3 position = pos.position;
+                    Quaternion rotation = pos.rotation;
+
+
+                    InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                    interactablePackagingBox_Item.FillBoxWithItem(spawnItem.itemType, 1);
+                    interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
+
+                    FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                    TestMod.autoOpenCards = true;
+                    if (itemListField != null)
+                    {
+                        List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
+
+                        if (spawnedItems != null)
+                        {
+                            Transform playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+
+                            Item closestItem = null;
+                            float shortestDistance = float.MaxValue;
+
+                            foreach (Item _item in spawnedItems)
+                            {
+                                if (_item.GetItemType() == spawnItem.itemType)
+                                {
+                                    float distanceToPlayer = Vector3.Distance(playerTransform.position, _item.transform.position);
+
+                                    if (distanceToPlayer < shortestDistance)
+                                    {
+                                        shortestDistance = distanceToPlayer;
+                                        closestItem = _item;
+                                    }
+                                }
+                            }
+
+                            if (closestItem != null)
+                            {
+                                CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(closestItem);
+                                interactablePackagingBox_Item.OnDestroyed();
+                            }
+                            else
+                            {
+                                status = CrowdResponse.Status.STATUS_FAILURE;
+                                message = "Unable to activate pack opening.";
+                            }
+                        }
+                    }
+
+                });
+
+
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                TestMod.autoOpenCards = false;
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            TestMod.autoOpenCards = false;
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
+        public static CrowdResponse SpawnBread(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+
+            Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+            Vector3 position = pos.position;
+            Quaternion rotation = pos.rotation;
+
+
+            string objPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.obj");
+            string mtlPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.mtl");
+            string pngPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.png");
+
+            if (File.Exists(objPath))
+            {
+                GameObject originalBread = null;
+
+                using (FileStream objStream = new FileStream(objPath, FileMode.Open, FileAccess.Read))
+                using (FileStream mtlStream = new FileStream(mtlPath, FileMode.Open, FileAccess.Read))
+                {
+                    originalBread = new OBJLoader().Load(objStream, mtlStream);
+
+                    if (originalBread == null) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Cannot find bread");
+
+                    originalBread.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                }
+
+                for (int i = 0; i < 10; i++)
+                {
+                    float spawnHeightAbovePlayer = UnityEngine.Random.Range(5.0f, 10.0f);
+                    Vector3 spawnPosition = new Vector3(
+                        pos.position.x,
+                        pos.position.y + spawnHeightAbovePlayer,
+                        pos.position.z
+                    );
+
+                    GameObject breadInstance = UnityEngine.Object.Instantiate(originalBread, spawnPosition, Quaternion.identity);
+                    Renderer renderer = breadInstance.GetComponent<Renderer>();
+
+                    if (renderer != null)
+                    {
+                        if (renderer.material.shader.name != "Standard") renderer.material.shader = Shader.Find("Standard");
+
+                        if (renderer.material.mainTexture == null)
+                        {
+                            Texture2D defaultTexture = LoadTexture(pngPath);
+                            renderer.material.mainTexture = defaultTexture;
+                        }
+                    }
+
+
+                    if (breadInstance.GetComponent<Collider>() == null)
+                    {
+                        BoxCollider boxCollider = breadInstance.AddComponent<BoxCollider>();
+
+
+                    }
+
+                    Rigidbody rb = breadInstance.GetComponent<Rigidbody>();
+                    if (rb == null)
+                    {
+                        rb = breadInstance.AddComponent<Rigidbody>();
+                        rb.mass = 1.0f;
+                        rb.useGravity = true;
+                        rb.drag = 0.5f;
+                        rb.angularDrag = 0.05f;
+                    }
+
+                    breadInstance.AddComponent<InteractableObject2>();
+                }
+
+
+            }
+
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
 
 
 
@@ -1155,117 +1354,12 @@ namespace BepinControl
 
 
 
-
-
                 TestMod.ActionQueue.Enqueue(() =>
                 {
 
                     Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
                     Vector3 position = pos.position;
                     Quaternion rotation = pos.rotation;
-
-
-
-                    /* bread test 
-                    string objPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.obj");
-                    string mtlPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.mtl");
-                    string pngPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.png");
-
-                    if (File.Exists(objPath))
-                    {
-                        GameObject originalBread = null;
-
-                        // Load the OBJ file once to get the original object
-                        using (FileStream objStream = new FileStream(objPath, FileMode.Open, FileAccess.Read))
-                        using (FileStream mtlStream = new FileStream(mtlPath, FileMode.Open, FileAccess.Read))
-                        {
-                            originalBread = new OBJLoader().Load(objStream, mtlStream);
-
-                            if (originalBread == null)
-                            {
-                                Debug.LogError("Failed to load object. The OBJLoader returned null.");
-                                return;
-                            }
-
-                            // Set the scale of the original bread object
-                            originalBread.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);  // Uniform scaling
-                        }
-
-                        // Now spawn 30 copies of the original bread object
-                        for (int i = 0; i < 10; i++)  // Loop to spawn 30 breads
-                        {
-                            // Randomize height above the player, but keep X and Z the same as the player's position
-                            float spawnHeightAbovePlayer = UnityEngine.Random.Range(5.0f, 10.0f);  // Bread spawns 5 to 10 units above the player
-                            Vector3 spawnPosition = new Vector3(
-                                pos.position.x,             // Player's X position
-                                pos.position.y + spawnHeightAbovePlayer,  // Spawn above player
-                                pos.position.z              // Player's Z position
-                            );
-
-                            // Clone the original bread object to create a new instance
-                            GameObject breadInstance = UnityEngine.Object.Instantiate(originalBread, spawnPosition, Quaternion.identity);
-
-
-                            Renderer renderer = breadInstance.GetComponent<Renderer>();
-
-                            if (renderer != null)
-                            {
-                                if (renderer.material.shader.name != "Standard")
-                                {
-                                    renderer.material.shader = Shader.Find("Standard");  // Set the shader to Standard
-                                    Debug.Log("Shader set to Standard.");
-                                }
-
-
-                                if (renderer.material.mainTexture == null)  // Check if the texture didn't load
-                                {
-                                    Debug.LogWarning("Applying default texture to bread.");
-                                    Texture2D defaultTexture = LoadTexture(pngPath);
-                                    renderer.material.mainTexture = defaultTexture;
-                                }
-                            }
-
-
-                            // Add BoxCollider or MeshCollider to ensure the bread can collide with the floor
-                            if (breadInstance.GetComponent<Collider>() == null)
-                            {
-                                // Option 1: Add a BoxCollider (simpler, usually works well)
-                                BoxCollider boxCollider = breadInstance.AddComponent<BoxCollider>();
-
-                                // Option 2: Use MeshCollider with convex (if you need complex collision)
-                                // MeshCollider meshCollider = breadInstance.AddComponent<MeshCollider>();
-                                // meshCollider.convex = true;  // Convex is required for dynamic objects
-                            }
-
-                            // Add Rigidbody to the bread instance for physics
-                            Rigidbody rb = breadInstance.GetComponent<Rigidbody>();
-                            if (rb == null)
-                            {
-                                rb = breadInstance.AddComponent<Rigidbody>();
-                                rb.mass = 1.0f;
-                                rb.useGravity = true;  // Enable gravity
-                                rb.drag = 0.5f;        // Adjust drag to control movement
-                                rb.angularDrag = 0.05f;  // Adjust angular drag to slow rotation
-                            }
-
-                            // Optional: Make the bread interactable if needed
-                            breadInstance.AddComponent<InteractableObject2>();  // Script to handle interaction (optional)
-                        }
-
-                       
-                    }
-                    else
-                    {
-                        Debug.LogError("OBJ file not found: " + objPath);
-                    }
-
-
-                    */
-
-
-
-
-
 
 
 
@@ -1277,36 +1371,6 @@ namespace BepinControl
                         interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, 64);
                         interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
 
-
-                        /*
-                         * auto open test
-                        FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
-
-
-                        if (itemListField != null)
-                        {
-                            List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
-
-
-
-
-                            if (spawnedItems != null)
-                            {
-                                foreach (Item _item in spawnedItems)
-                                {
-
-
-                                    if (_item.GetItemType() == EItemType.RareCardPack)
-                                    {
-                                        CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(_item);
-                                        interactablePackagingBox_Item.OnDestroyed();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        */
-
                     }
                     else
                     {
@@ -1314,13 +1378,7 @@ namespace BepinControl
                         interactablePackagingBox_Item2.FillBoxWithItem(item2.itemType, 32);
                         interactablePackagingBox_Item2.name = interactablePackagingBox_Item2.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
 
-
-
-
                     }
-
-
-
 
 
 

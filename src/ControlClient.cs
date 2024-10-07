@@ -326,6 +326,22 @@ namespace BepinControl
                 {"giveatplayer_system_gate_#1",CrowdDelegates.GiveItemAtPlayer },
                 {"give_system_gate_#2",CrowdDelegates.GiveItem },
                 {"giveatplayer_system_gate_#2",CrowdDelegates.GiveItemAtPlayer },
+
+
+
+                {"openpack_common_pack", CrowdDelegates.OpenCardPack },
+                {"openpack_rare_pack", CrowdDelegates.OpenCardPack },
+                {"openpack_epic_pack", CrowdDelegates.OpenCardPack },
+                {"openpack_legend_pack", CrowdDelegates.OpenCardPack },
+                {"openpack_destiny_common_pack", CrowdDelegates.OpenCardPack },
+                {"openpack_destiny_rare_pack", CrowdDelegates.OpenCardPack },
+                {"openpack_destiny_epic_pack", CrowdDelegates.OpenCardPack },
+                {"openpack_destiny_legend_pack", CrowdDelegates.OpenCardPack },
+
+                {"spanw_bread", CrowdDelegates.SpawnBread },
+
+
+
             };
         }
 
@@ -410,7 +426,7 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     TestMod.CreateChatStatusText("Disconnected from Crowd Control!");
-                }); 
+                });
                 TestMod.mls.LogInfo($"Disconnected from Crowd Control. {e.ToString()}");
                 Socket.Close();
             }
