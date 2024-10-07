@@ -357,9 +357,8 @@ namespace BepinControl
             string message = "";
 
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
-
-            bool m_IsCreditCardMode = (bool)getProperty(CSingleton<UI_CreditCardScreen>.Instance, "m_IsCreditCardMode");
-            if (m_IsCreditCardMode) { TestMod.mls.LogInfo("Tried to Teleport in Card reader"); return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in card Machine"); }
+            bool m_IsCreditCardMode = CSingleton<UI_CreditCardScreen>.Instance.isActiveAndEnabled;
+            if (m_IsCreditCardMode || CSingleton<UI_CashCounterScreen>.Instance.m_GivingChangeGrp.activeSelf) { TestMod.mls.LogInfo("Tried to Teleport in Card reader"); return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in card Machine"); }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -1381,6 +1380,58 @@ namespace BepinControl
                         interactablePackagingBox_Item2.name = interactablePackagingBox_Item2.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
 
                     }
+
+
+
+                });
+
+
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+        public static CrowdResponse SendHugeEmpty(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            var item = "common pack (32)";
+            RestockData item2 = null;
+
+
+
+            string[] enteredText = req.code.Split('_');
+            if (enteredText.Length > 0)
+            {
+                try
+                {
+                    item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Item database, make sure to search for item, in case name changes
+                }
+                catch
+                {
+                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn at player.");
+
+                }
+            }
+            try
+            {
+
+
+
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+
+                    Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+                    Vector3 position = pos.position;
+                    Quaternion rotation = pos.rotation;
+                    InteractablePackagingBox_Item interactablePackagingBox_Item2 = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxSmallPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                    interactablePackagingBox_Item2.FillBoxWithItem(item2.itemType, 0); 
+                    interactablePackagingBox_Item2.transform.localScale = new Vector3(UnityEngine.Random.Range(5f, 15f), UnityEngine.Random.Range(5f,15f), UnityEngine.Random.Range(5f, 15f));
+                    interactablePackagingBox_Item2.name = interactablePackagingBox_Item2.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
 
 
 
