@@ -87,7 +87,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse SpawnCustomer(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -101,15 +101,16 @@ namespace BepinControl
                 {
                     if (req.targets != null)
                     {
-                        if (req.targets[0].service == "twitch") {
+                        if (req.targets[0].service == "twitch")
+                        {
                             TestMod.twitchChannel = req.targets[0].name;
                         }
                     }
                     TestMod.NameOverride = req.viewer;
                     TestMod.isSmelly = false;
-                    CustomerManager.Instance.m_CustomerCountMax = + 1;
+                    CustomerManager.Instance.m_CustomerCountMax = +1;
                     callFunc(CustomerManager.Instance, "AddCustomerPrefab", null);
-                    Customer newCustomer = CM.GetNewCustomer();
+                    Customer newCustomer = CM.GetNewCustomer(false);
 
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
@@ -123,7 +124,36 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-       
+        public static CrowdResponse EmptyCleansers(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            InteractableAutoCleanser IAC = CSingleton<InteractableAutoCleanser>.Instance;
+            if (IAC.m_StoredItemList.Count == 0 || IAC.m_PosList.Count == 0) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Cleanser, or no Cleaners");
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
+            try
+            {
+                foreach (var cleanser in IAC.GetStoredItemList())
+                {
+                    if (cleanser != null)
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            cleanser.SetContentFill(0f);
+                        });
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
         public static CrowdResponse SpawnCustomerSmelly(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -145,7 +175,7 @@ namespace BepinControl
                     }
                     TestMod.isSmelly = true;
                     TestMod.NameOverride = req.viewer;
-                    Customer Smelly = CM.GetNewCustomer();
+                    Customer Smelly = CM.GetNewCustomer(true);
                     if (Smelly != null)
                     {
                         Smelly.SetSmelly();
@@ -170,7 +200,7 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
             bool found = false;
-            int workerCount =0;
+            int workerCount = 0;
             Worker workerid = null;
             List<Worker> m_WorkerList = WorkerManager.GetWorkerList();
             if (!found)
@@ -178,7 +208,7 @@ namespace BepinControl
                 try
                 {
                     workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
-                    if (!m_WorkerList[workerCount].isActiveAndEnabled)
+                    if (!m_WorkerList[workerCount].IsActive())
                     {
                         workerid = m_WorkerList[workerCount];
                         found = true;
@@ -203,7 +233,7 @@ namespace BepinControl
                         workerid.gameObject.SetActive(true);
                         workerid.transform.position = InteractionPlayerController.Instance.m_WalkerCtrl.transform.position;
                         CPlayerData.SetIsWorkerHired(workerCount, true);
-                        
+
                     });
                 }
                 catch (Exception e)
@@ -227,7 +257,7 @@ namespace BepinControl
                 try
                 {
                     workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
-                    if (m_WorkerList[workerCount].m_IsActive && !LightManager.GetHasDayEnded())
+                    if (m_WorkerList[workerCount].IsActive() && !LightManager.GetHasDayEnded())
                     {
                         workerid = m_WorkerList[workerCount];
                         found = true;
@@ -247,7 +277,7 @@ namespace BepinControl
                     TestMod.ActionQueue.Enqueue(() =>
                     {
                         workerid.FireWorker();
-                        workerid.DeactivateWorker(); 
+                        workerid.DeactivateWorker();
                         workerid.m_IsActive = false;
                         workerid.gameObject.SetActive(false);
                         CPlayerData.SetIsWorkerHired(workerCount, false);
@@ -318,7 +348,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-       
+
         public static CrowdResponse TeleportPlayer(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -326,6 +356,8 @@ namespace BepinControl
 
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
 
+            bool m_IsCreditCardMode = (bool)getProperty(CSingleton<UI_CreditCardScreen>.Instance, "m_IsCreditCardMode");
+            if (m_IsCreditCardMode) { TestMod.mls.LogInfo("Tried to Teleport in Card reader"); return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in card Machine"); }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -360,7 +392,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse ForceMath(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -393,13 +425,13 @@ namespace BepinControl
             if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
             if (player.m_CurrentGameState != EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");//Better state check, still runs if the player leaves the checkout, but only starts if there
-            
+
             List<Customer> cust = (List<Customer>)getProperty(CSingleton<CustomerManager>.Instance, "m_CustomerList");
-            foreach(Customer c in cust)
+            foreach (Customer c in cust)
             {
-                if(c.m_CustomerCash.gameObject.activeSelf == true)
+                if (c.m_CustomerCash.gameObject.activeSelf == true)
                 {
-                    if(TestMod.ForceUseCredit) c.m_CustomerCash.m_IsCard = true;
+                    if (TestMod.ForceUseCredit) c.m_CustomerCash.m_IsCard = true;
                     if (TestMod.ForceUseCash) c.m_CustomerCash.m_IsCard = false;
                 }
             }
@@ -422,7 +454,7 @@ namespace BepinControl
             new Thread(new TimedThread(req.GetReqID(), TimedType.INVERT_X, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
-        
+
         public static CrowdResponse SetLanguage(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -475,11 +507,6 @@ namespace BepinControl
                         newLanguage = "Korean";
                         break;
                     }
-                case "dutch":
-                    {
-                        newLanguage = "Dutch";
-                        break;
-                    }
             };
 
 
@@ -493,7 +520,7 @@ namespace BepinControl
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
 
         }
-        
+
         public static CrowdResponse InvertY(ControlClient client, CrowdRequest req)
         {
             int dur = 30;
@@ -522,14 +549,14 @@ namespace BepinControl
         {
             int dur = 30;
             if (req.duration > 0) dur = req.duration / 1000;
-
+            if (CSingleton<CollectionBinderUI>.Instance.m_CollectionAlbum.gameObject.activeSelf) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in Binder");
             if (TimedThread.isRunning(TimedType.HIGH_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             if (TimedThread.isRunning(TimedType.LOW_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
             new Thread(new TimedThread(req.GetReqID(), TimedType.LOW_FOV, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
-        
+
         public static CrowdResponse GiveMoney(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -562,7 +589,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse TakeMoney(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -596,7 +623,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse ShopControls(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -633,7 +660,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse UpgradeWarehouse(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -654,7 +681,7 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse UpgradeStore(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -675,7 +702,7 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse UnlockWarehouse(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -706,6 +733,7 @@ namespace BepinControl
             RestockData item2 = null;
             string[] enteredText = req.code.Split('_');
             if (enteredText.Length > 0)
+            {
                 try
                 {
                     if (enteredText.Length == 5) { item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3], enteredText[4]); }
@@ -718,12 +746,13 @@ namespace BepinControl
                 {
                     return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to Find Item in Array.");
                 }
+            }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, 64, item2.isBigBox);
-                    else RestockManager.SpawnPackageBoxItem(item2.itemType, 32, item2.isBigBox);
+                    if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
+                    else RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
                 });
             }
             catch (Exception e)
@@ -781,7 +810,7 @@ namespace BepinControl
                     CSingleton<InteractablePackagingBox>.Instance.ThrowBox(true);
                 });
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
                 status = CrowdResponse.Status.STATUS_RETRY;
@@ -864,29 +893,29 @@ namespace BepinControl
 
 
 
-public class InteractableObject2 : MonoBehaviour
-    {
-        private static InteractableObject2 currentlyHeldObject = null; 
+        public class InteractableObject2 : MonoBehaviour
+        {
+            private static InteractableObject2 currentlyHeldObject = null;
 
-        private bool isHeld = false;
-        private Transform playerCamera;
-        private Rigidbody rb;
-        private Color originalColor;
+            private bool isHeld = false;
+            private Transform playerCamera;
+            private Rigidbody rb;
+            private Color originalColor;
 
-        private Renderer renderer;
-        private Collider breadCollider;  
+            private Renderer renderer;
+            private Collider breadCollider;
 
-        private Transform playerTransform;
+            private Transform playerTransform;
 
-        private float maxPickupDistance = 3.5f;
+            private float maxPickupDistance = 3.5f;
 
-        private float moveSpeed = 5.0f;
+            private float moveSpeed = 5.0f;
 
-        private bool isHovered = false;
+            private bool isHovered = false;
 
 
 
-        private float interactionDelay = 1.0f;
+            private float interactionDelay = 1.0f;
 
             void Start()
             {
@@ -923,179 +952,179 @@ public class InteractableObject2 : MonoBehaviour
 
 
 
-        void Update()
-        {
- 
-            if (isHeld)
+            void Update()
             {
-                SmoothlyHoldObjectInFront();
 
-          
-                if (Input.GetKeyDown(KeyCode.F))
+                if (isHeld)
                 {
-                    ThrowObject();
-                }
+                    SmoothlyHoldObjectInFront();
 
-                if (Input.GetKeyDown(KeyCode.E))
-                {
-                    EatObject();
-                }
-            }
-            else
-            {
-                if (Input.GetMouseButtonDown(0))  
-                {
-                    if (currentlyHeldObject == null) 
+
+                    if (Input.GetKeyDown(KeyCode.F))
                     {
-                        TryPickupObjectUnderMouse();
+                        ThrowObject();
+                    }
+
+                    if (Input.GetKeyDown(KeyCode.E))
+                    {
+                        EatObject();
+                    }
+                }
+                else
+                {
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        if (currentlyHeldObject == null)
+                        {
+                            TryPickupObjectUnderMouse();
+                        }
                     }
                 }
             }
-        }
 
-        private void SmoothlyHoldObjectInFront()
-        {
-            rb.isKinematic = true; 
-            breadCollider.enabled = false;
-
-            Vector3 targetPosition = playerCamera.position + playerCamera.forward * 0.7f;
-            targetPosition.y -= 0.2f; 
-
-          
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-
-            transform.rotation = Quaternion.LookRotation(playerCamera.forward);
-            transform.Rotate(Vector3.right, 90.0f); 
-        }
-
-        private void TryPickupObjectUnderMouse()
-        {
-            Ray ray = playerCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
-            RaycastHit[] hits = Physics.RaycastAll(ray, maxPickupDistance);
-
-            bool breadHit = false;
-
-            foreach (RaycastHit hit in hits)
+            private void SmoothlyHoldObjectInFront()
             {
-                Debug.Log("Raycast hit: " + hit.collider.gameObject.name);
+                rb.isKinematic = true;
+                breadCollider.enabled = false;
 
-                if (hit.collider != null && hit.collider.gameObject == gameObject)
+                Vector3 targetPosition = playerCamera.position + playerCamera.forward * 0.7f;
+                targetPosition.y -= 0.2f;
+
+
+                transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
+
+                transform.rotation = Quaternion.LookRotation(playerCamera.forward);
+                transform.Rotate(Vector3.right, 90.0f);
+            }
+
+            private void TryPickupObjectUnderMouse()
+            {
+                Ray ray = playerCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+                RaycastHit[] hits = Physics.RaycastAll(ray, maxPickupDistance);
+
+                bool breadHit = false;
+
+                foreach (RaycastHit hit in hits)
                 {
-                    breadHit = true; 
-                    Debug.Log("Bread object hit, attempting to pick it up.");
-                    break; 
+                    Debug.Log("Raycast hit: " + hit.collider.gameObject.name);
+
+                    if (hit.collider != null && hit.collider.gameObject == gameObject)
+                    {
+                        breadHit = true;
+                        Debug.Log("Bread object hit, attempting to pick it up.");
+                        break;
+                    }
+                }
+
+                if (breadHit)
+                {
+                    PickUpObject();
+                }
+                else
+                {
+                    Debug.Log("No bread object found by the raycast.");
                 }
             }
 
-            if (breadHit)
+            private void PickUpObject()
             {
-                PickUpObject(); 
-            }
-            else
-            {
-                Debug.Log("No bread object found by the raycast.");
-            }
-        }
-
-        private void PickUpObject()
-        {
-            isHeld = true;
-            currentlyHeldObject = this;  
-            rb.isKinematic = true; 
-            breadCollider.enabled = false;  
-            Debug.Log("Bread object picked up.");
-        }
-
-        private void ReleaseObject()
-        {
-            Debug.Log("Attempting to release the bread object.");
-
-            isHeld = false;
-            currentlyHeldObject = null;  
-
-           
-            rb.isKinematic = false;
-            breadCollider.enabled = true;
-
-            Debug.Log("Bread object released: Kinematic = " + rb.isKinematic + ", Collider enabled = " + breadCollider.enabled);
-
-            
-            StartCoroutine(IgnorePlayerCollisionTemporarily());
-        }
-
-        private void ThrowObject()
-        {
-            Debug.Log("Throwing the bread object.");
-            rb.isKinematic = false; 
-
-            Vector3 throwForce = playerCamera.forward * 10f; 
-            rb.AddForce(throwForce, ForceMode.Impulse);
-
-         
-            ReleaseObject();
-        }
-
-        private void EatObject()
-        {
-
-    
-
-            transform.rotation = Quaternion.LookRotation(playerCamera.forward);
-            transform.Rotate(Vector3.right, 90.0f); // Rotate to lay flat on the camera
-
-
-
-
-            StartCoroutine(EatAndDestroy());
-        }
-
-        private IEnumerator EatAndDestroy()
-        {
-            float elapsedTime = 0f;
-            float duration = 1.0f;
-
-            Vector3 initialPosition = transform.position;
-
-            while (elapsedTime < duration)
-            {
-                transform.position = Vector3.Lerp(initialPosition, playerCamera.position + playerCamera.forward * 0.5f, elapsedTime / duration);
-                transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y * 0.95f, transform.localScale.z); // Slightly reduce height
-                elapsedTime += Time.deltaTime;
-
-                yield return null; 
+                isHeld = true;
+                currentlyHeldObject = this;
+                rb.isKinematic = true;
+                breadCollider.enabled = false;
+                Debug.Log("Bread object picked up.");
             }
 
+            private void ReleaseObject()
+            {
+                Debug.Log("Attempting to release the bread object.");
 
-            Destroy(gameObject);
+                isHeld = false;
+                currentlyHeldObject = null;
+
+
+                rb.isKinematic = false;
+                breadCollider.enabled = true;
+
+                Debug.Log("Bread object released: Kinematic = " + rb.isKinematic + ", Collider enabled = " + breadCollider.enabled);
+
+
+                StartCoroutine(IgnorePlayerCollisionTemporarily());
+            }
+
+            private void ThrowObject()
+            {
+                Debug.Log("Throwing the bread object.");
+                rb.isKinematic = false;
+
+                Vector3 throwForce = playerCamera.forward * 10f;
+                rb.AddForce(throwForce, ForceMode.Impulse);
+
+
+                ReleaseObject();
+            }
+
+            private void EatObject()
+            {
+
+
+
+                transform.rotation = Quaternion.LookRotation(playerCamera.forward);
+                transform.Rotate(Vector3.right, 90.0f); // Rotate to lay flat on the camera
+
+
+
+
+                StartCoroutine(EatAndDestroy());
+            }
+
+            private IEnumerator EatAndDestroy()
+            {
+                float elapsedTime = 0f;
+                float duration = 1.0f;
+
+                Vector3 initialPosition = transform.position;
+
+                while (elapsedTime < duration)
+                {
+                    transform.position = Vector3.Lerp(initialPosition, playerCamera.position + playerCamera.forward * 0.5f, elapsedTime / duration);
+                    transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y * 0.95f, transform.localScale.z); // Slightly reduce height
+                    elapsedTime += Time.deltaTime;
+
+                    yield return null;
+                }
+
+
+                Destroy(gameObject);
+            }
+
+            private IEnumerator IgnorePlayerCollisionTemporarily()
+            {
+                Collider playerCollider = playerTransform.GetComponent<Collider>();
+
+                if (playerCollider != null)
+                {
+                    Physics.IgnoreCollision(breadCollider, playerCollider, true);  // Ignore collisions
+
+                    yield return new WaitForSeconds(interactionDelay);
+
+                    Physics.IgnoreCollision(breadCollider, playerCollider, false);
+                    Debug.Log("Bread object interaction with player re-enabled.");
+                }
+                else
+                {
+                    Debug.LogError("Player collider not found.");
+                }
+            }
         }
 
-        private IEnumerator IgnorePlayerCollisionTemporarily()
-        {
-            Collider playerCollider = playerTransform.GetComponent<Collider>();
-
-            if (playerCollider != null)
-            {
-                Physics.IgnoreCollision(breadCollider, playerCollider, true);  // Ignore collisions
-
-                yield return new WaitForSeconds(interactionDelay);
-
-                Physics.IgnoreCollision(breadCollider, playerCollider, false);
-                Debug.Log("Bread object interaction with player re-enabled.");
-            }
-            else
-            {
-                Debug.LogError("Player collider not found.");
-            }
-        }
-    }
 
 
 
 
 
 
-
-    public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
+        public static CrowdResponse GiveItemAtPlayer(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
@@ -1123,14 +1152,14 @@ public class InteractableObject2 : MonoBehaviour
             }
             try
             {
-   
 
-        
-            
+
+
+
 
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                   
+
                     Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
                     Vector3 position = pos.position;
                     Quaternion rotation = pos.rotation;
@@ -1238,7 +1267,7 @@ public class InteractableObject2 : MonoBehaviour
 
 
 
-                    
+
 
                     if (item2.isBigBox)
                     {
@@ -1291,12 +1320,12 @@ public class InteractableObject2 : MonoBehaviour
                     }
 
 
-                   
+
 
 
 
                 });
-                
+
 
             }
             catch (Exception e)

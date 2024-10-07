@@ -252,7 +252,7 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Set Language to Chinese (Simplified)", "language_chineses") { Description = "Set Language to Chinese (Simplified).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 new("Set Language to Chinese (Traditional)", "language_chineset") { Description = "Set Language to Chinese (Traditional).", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 new("Set Language to Korean", "language_korean") { Description = "Set Language to Korean.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
-                new("Set Language to Dutch", "language_dutch") { Description = "Set Language to Dutch.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
+                //new("Set Language to Dutch", "language_dutch") { Description = "Set Language to Dutch.", Duration = 60, Category = "Game Language", Image = "lang", Price = 50 },//confirmed
                 
                 new("Hey Ohhh", "speak_heyoo") { Description = "Speak!", Category = "Speak", Price = 25 },
 
@@ -275,7 +275,7 @@ namespace CrowdControl.Games.Packs.TCGCardShopSimulator
                 new("Send Auto Scent G500", "furniture_auto_scent_g500") { Description = "Send an Auto Scent G500", Category = "Furniture", Price = 250 },
                 new("Send Card Display Table", "furniture_card_display_table") { Description = "Send a Card Display Table", Category = "Furniture", Price = 250 },
                 new("Send Big Personal Shelf", "furniture_big_personal_shelf") { Description = "Send a Big Personal Shelf", Category = "Furniture", Price = 250 },
-                new("Send Vintage Card Table", "furniture_vintage_card_shelf") { Description = "Send a Vintage Card Table", Category = "Furniture", Price = 250 },
+                new("Send Vintage Card Table", "furniture_vintage_card_table") { Description = "Send a Vintage Card Table", Category = "Furniture", Price = 250 },
                 new("Send Wide Shelf", "furniture_wide_shelf") { Description = "Send a Wide Shelf", Category = "Furniture", Price = 250 },
                 new("Send Huge Personal Shelf", "furniture_huge_personal_shelf") { Description = "Send a Huge Personal Shelf", Category = "Furniture", Price = 250 },
                 new("Send Auto Scent T1000", "furniture_auto_scent_t1000") { Description = "Send Auto Scent t1000", Category = "Furniture", Price = 250 },
