@@ -770,7 +770,6 @@ namespace BepinControl
             var item = "common pack (64)";
             RestockData item2 = null;
             string[] enteredText = req.code.Split('_');
-            if (enteredText.Length > 0)
                 try
                 {
                     item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Find a random item to instantiate
@@ -1428,6 +1427,7 @@ namespace BepinControl
                     Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
                     Vector3 position = pos.position;
                     Quaternion rotation = pos.rotation;
+                    
                     InteractablePackagingBox_Item interactablePackagingBox_Item2 = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxSmallPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
                     interactablePackagingBox_Item2.FillBoxWithItem(item2.itemType, 0); 
                     interactablePackagingBox_Item2.transform.localScale = new Vector3(UnityEngine.Random.Range(5f, 15f), UnityEngine.Random.Range(5f,15f), UnityEngine.Random.Range(5f, 15f));
