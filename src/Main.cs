@@ -10,6 +10,8 @@ using TMPro;
 using System.Net.Sockets;
 using System.IO;
 using System.Linq;
+using static BepinControl.TestMod;
+using System.Reflection;
 
 namespace BepinControl
 {
@@ -63,7 +65,7 @@ namespace BepinControl
         private static StreamWriter twitchWriter;
 
         private static TextMeshPro chatStatusText;
-
+        public static bool autoOpenCards = false;
 
 
         void Awake()
@@ -271,16 +273,23 @@ namespace BepinControl
                                                     {
                                                         if (customer.isActiveAndEnabled && customer.name.ToLower() == username.ToLower())
                                                         {
-                                                            //string displayMessage = $"{badgeDisplay} {username}: {chatMessage}";
-                                                            string lowerChatMessage = chatMessage.ToLower();
-                                                            if (triggerWords.Any(word => lowerChatMessage.Contains(word)))
+                                                            try
                                                             {
-                                                                if (!customer.IsSmelly()) {
-                                                                    MakeCustomerSmellyTemporarily(customer, 5f);
+                                                                //string displayMessage = $"{badgeDisplay} {username}: {chatMessage}";
+                                                                string lowerChatMessage = chatMessage.ToLower();
+                                                                if (triggerWords.Any(word => lowerChatMessage.Contains(word)))
+                                                                {
+                                                                    if (!customer.IsSmelly())
+                                                                    {
+                                                                        MakeCustomerSmellyTemporarily(customer, 5f);
+                                                                    }
                                                                 }
-                                                            }
 
-                                                            CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(chatMessage, 1.8f, customer.transform);
+                                                                CSingleton<PricePopupSpawner>.Instance.ShowTextPopup(chatMessage, 1.8f, customer.transform);
+                                                            } catch (Exception ex)
+                                                            {
+
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -618,6 +627,32 @@ namespace BepinControl
             }
         }
 
+        [HarmonyPatch(typeof(CardOpeningSequence))]
+        [HarmonyPatch("ReadyingCardPack")]
+        class Patch_ReadyingCardPack_ReadyingCardPack
+        {
+            static void Prefix(Item __instance)
+            {
+                mls.LogInfo("ITEM: " + __instance.name);
+            }
+        }
+
+        [HarmonyPatch(typeof(CardOpeningSequence))]
+        [HarmonyPatch("Update")]
+        class Patch_CardOpeningSequence_Update
+        {
+            static void Postfix(CardOpeningSequence __instance)
+            {
+                if (!autoOpenCards) return;
+                var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                autoFireField.SetValue(__instance, true);
+
+                var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                autoFireKeydown.SetValue(__instance, true);
+
+                //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
+            }
+        }
 
 
         [HarmonyPatch(typeof(InteractionPlayerController))]
