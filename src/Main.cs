@@ -280,7 +280,7 @@ namespace BepinControl
 
                                         string[] triggerWords = { "fart", "gas", "burp", "smell", "shit", "poo", "stank", "nasty" };
 
-                                        if (!string.IsNullOrEmpty(badgeDisplay) || allowedUsernames.Any(name => name.Equals(username, StringComparison.OrdinalIgnoreCase)))
+                                        if (!string.IsNullOrEmpty(badgeDisplay) || allowedUsernames.Any(name => name.ToLower().Equals(username, StringComparison.OrdinalIgnoreCase)))
                                         {
                                             TestMod.ActionQueue.Enqueue(() =>
                                             {
