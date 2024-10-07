@@ -1,12 +1,10 @@
 using I2.Loc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Scripting;
 
 
 namespace BepinControl
@@ -81,7 +79,7 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
         public static CrowdResponse SpawnCustomer(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -95,15 +93,16 @@ namespace BepinControl
                 {
                     if (req.targets != null)
                     {
-                        if (req.targets[0].service == "twitch") {
+                        if (req.targets[0].service == "twitch")
+                        {
                             TestMod.twitchChannel = req.targets[0].name;
                         }
                     }
                     TestMod.NameOverride = req.viewer;
                     TestMod.isSmelly = false;
-                    CustomerManager.Instance.m_CustomerCountMax = + 1;
+                    CustomerManager.Instance.m_CustomerCountMax = +1;
                     callFunc(CustomerManager.Instance, "AddCustomerPrefab", null);
-                    Customer newCustomer = CM.GetNewCustomer();
+                    Customer newCustomer = CM.GetNewCustomer(false);
 
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
@@ -117,7 +116,36 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-       
+        public static CrowdResponse EmptyCleansers(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            InteractableAutoCleanser IAC = CSingleton<InteractableAutoCleanser>.Instance;
+            if (IAC.m_StoredItemList.Count == 0 || IAC.m_PosList.Count == 0) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Cleanser, or no Cleaners");
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
+            try
+            {
+                foreach (var cleanser in IAC.GetStoredItemList())
+                {
+                    if (cleanser != null)
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            cleanser.SetContentFill(0f);
+                        });
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
         public static CrowdResponse SpawnCustomerSmelly(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -139,7 +167,7 @@ namespace BepinControl
                     }
                     TestMod.isSmelly = true;
                     TestMod.NameOverride = req.viewer;
-                    Customer Smelly = CM.GetNewCustomer();
+                    Customer Smelly = CM.GetNewCustomer(true);
                     if (Smelly != null)
                     {
                         Smelly.SetSmelly();
@@ -172,7 +200,7 @@ namespace BepinControl
                 try
                 {
                     workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
-                    if (!m_WorkerList[workerCount].isActiveAndEnabled)
+                    if (!m_WorkerList[workerCount].IsActive())
                     {
                         workerid = m_WorkerList[workerCount];
                         found = true;
@@ -221,7 +249,7 @@ namespace BepinControl
                 try
                 {
                     workerCount = UnityEngine.Random.Range(0, m_WorkerList.Count);
-                    if (m_WorkerList[workerCount].m_IsActive && !LightManager.GetHasDayEnded())
+                    if (m_WorkerList[workerCount].IsActive() && !LightManager.GetHasDayEnded())
                     {
                         workerid = m_WorkerList[workerCount];
                         found = true;
@@ -471,11 +499,6 @@ namespace BepinControl
                         newLanguage = "Korean";
                         break;
                     }
-                case "dutch":
-                    {
-                        newLanguage = "Dutch";
-                        break;
-                    }
             };
 
 
@@ -702,6 +725,7 @@ namespace BepinControl
             RestockData item2 = null;
             string[] enteredText = req.code.Split('_');
             if (enteredText.Length > 0)
+            {
                 try
                 {
                     if (enteredText.Length == 5) { item = string.Join(" ", enteredText[1], enteredText[2], enteredText[3], enteredText[4]); }
@@ -714,12 +738,13 @@ namespace BepinControl
                 {
                     return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to Find Item in Array.");
                 }
+            }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, 64, item2.isBigBox);
-                    else RestockManager.SpawnPackageBoxItem(item2.itemType, 32, item2.isBigBox);
+                    if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
+                    else RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
                 });
             }
             catch (Exception e)
