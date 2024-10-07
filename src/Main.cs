@@ -307,6 +307,7 @@ namespace BepinControl
                                                             }
                                                         }
                                                     }
+                                                }
                                                 catch (Exception e)
                                                 {
                                                     //is the customer active?
