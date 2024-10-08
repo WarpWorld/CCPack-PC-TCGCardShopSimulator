@@ -130,8 +130,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>#xcopy /Y "$(TargetDir)CrowdControl.dll" "D:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\BepInEx\plugins\CrowdControl"
+</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

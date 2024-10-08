@@ -1020,66 +1020,70 @@ namespace BepinControl
             string mtlPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.mtl");
             string pngPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.png");
 
-            if (File.Exists(objPath))
+
+            if (!File.Exists(objPath) || !File.Exists(mtlPath) || !File.Exists(pngPath)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Cannot find bread");
+
+            TestMod.ActionQueue.Enqueue(() =>
             {
-                GameObject originalBread = null;
 
-                using (FileStream objStream = new FileStream(objPath, FileMode.Open, FileAccess.Read))
-                using (FileStream mtlStream = new FileStream(mtlPath, FileMode.Open, FileAccess.Read))
-                {
-                    originalBread = new OBJLoader().Load(objStream, mtlStream);
+              
+                    GameObject originalBread = null;
 
-                    if (originalBread == null) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Cannot find bread");
-
-                    originalBread.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-                }
-
-                for (int i = 0; i < 10; i++)
-                {
-                    float spawnHeightAbovePlayer = UnityEngine.Random.Range(5.0f, 10.0f);
-                    Vector3 spawnPosition = new Vector3(
-                        pos.position.x,
-                        pos.position.y + spawnHeightAbovePlayer,
-                        pos.position.z
-                    );
-
-                    GameObject breadInstance = UnityEngine.Object.Instantiate(originalBread, spawnPosition, Quaternion.identity);
-                    Renderer renderer = breadInstance.GetComponent<Renderer>();
-
-                    if (renderer != null)
+                    using (FileStream objStream = new FileStream(objPath, FileMode.Open, FileAccess.Read))
+                    using (FileStream mtlStream = new FileStream(mtlPath, FileMode.Open, FileAccess.Read))
                     {
-                        if (renderer.material.shader.name != "Standard") renderer.material.shader = Shader.Find("Standard");
+                        originalBread = new OBJLoader().Load(objStream, mtlStream);
 
-                        if (renderer.material.mainTexture == null)
+
+                        originalBread.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        float spawnHeightAbovePlayer = UnityEngine.Random.Range(5.0f, 10.0f);
+                        Vector3 spawnPosition = new Vector3(
+                            pos.position.x,
+                            pos.position.y + spawnHeightAbovePlayer,
+                            pos.position.z
+                        );
+
+                        GameObject breadInstance = UnityEngine.Object.Instantiate(originalBread, spawnPosition, Quaternion.identity);
+                        Renderer renderer = breadInstance.GetComponent<Renderer>();
+
+                        if (renderer != null)
                         {
-                            Texture2D defaultTexture = LoadTexture(pngPath);
-                            renderer.material.mainTexture = defaultTexture;
+                            if (renderer.material.shader.name != "Standard") renderer.material.shader = Shader.Find("Standard");
+
+                            if (renderer.material.mainTexture == null)
+                            {
+                                Texture2D defaultTexture = LoadTexture(pngPath);
+                                renderer.material.mainTexture = defaultTexture;
+                            }
                         }
+
+
+                        if (breadInstance.GetComponent<Collider>() == null)
+                        {
+                            BoxCollider boxCollider = breadInstance.AddComponent<BoxCollider>();
+
+
+                        }
+
+                        Rigidbody rb = breadInstance.GetComponent<Rigidbody>();
+                        if (rb == null)
+                        {
+                            rb = breadInstance.AddComponent<Rigidbody>();
+                            rb.mass = 1.0f;
+                            rb.useGravity = true;
+                            rb.drag = 0.5f;
+                            rb.angularDrag = 0.05f;
+                        }
+
+                        breadInstance.AddComponent<InteractableObject2>();
                     }
 
 
-                    if (breadInstance.GetComponent<Collider>() == null)
-                    {
-                        BoxCollider boxCollider = breadInstance.AddComponent<BoxCollider>();
-
-
-                    }
-
-                    Rigidbody rb = breadInstance.GetComponent<Rigidbody>();
-                    if (rb == null)
-                    {
-                        rb = breadInstance.AddComponent<Rigidbody>();
-                        rb.mass = 1.0f;
-                        rb.useGravity = true;
-                        rb.drag = 0.5f;
-                        rb.angularDrag = 0.05f;
-                    }
-
-                    breadInstance.AddComponent<InteractableObject2>();
-                }
-
-
-            }
+            });
 
 
             return new CrowdResponse(req.GetReqID(), status, message);
