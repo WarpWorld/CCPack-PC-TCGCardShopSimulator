@@ -231,6 +231,7 @@ namespace BepinControl
 
                         workerid.ActivateWorker(true);
                         workerid.m_IsActive = true;
+                        //workerid.name = req.viewer; worker tags
                         workerid.gameObject.SetActive(true);
                         workerid.transform.position = InteractionPlayerController.Instance.m_WalkerCtrl.transform.position;
                         CPlayerData.SetIsWorkerHired(workerCount, true);
@@ -357,8 +358,6 @@ namespace BepinControl
             string message = "";
 
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
-            bool m_IsCreditCardMode = CSingleton<UI_CreditCardScreen>.Instance.isActiveAndEnabled;
-            if (m_IsCreditCardMode || CSingleton<UI_CashCounterScreen>.Instance.m_GivingChangeGrp.activeSelf) { TestMod.mls.LogInfo("Tried to Teleport in Card reader"); return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in card Machine"); }
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
