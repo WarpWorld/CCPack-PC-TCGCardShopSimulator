@@ -16,7 +16,7 @@ public class TCGCardShopSimulator : SimpleTCPPack<SimpleTCPServerConnector>
 
     public override Game Game { get; } = new("TCG Card Shop Simulator", "TCGCardShopSimulator", "PC", ConnectorType.SimpleTCPServerConnector);
 
-    public override EffectList Effects => new List<Effect>
+    public override EffectList Effects { get; } = new List<Effect>
     {
         new("Toggle Lights", "lights") { Description = "Toggle the Shop Lights", Category = "Misc", Price = 15 },
         new("Open Store", "open_store") { Description = "Opens the Players Store", Category = "Misc", Price = 100 },
