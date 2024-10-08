@@ -769,7 +769,6 @@ namespace BepinControl
             string message = "";
             var item = "common pack (64)";
             RestockData item2 = null;
-            string[] enteredText = req.code.Split('_');
                 try
                 {
                     item2 = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower() == item.ToLower());//Find a random item to instantiate
@@ -902,12 +901,9 @@ namespace BepinControl
             {
                 try
                 {
-                    int itemNameParts = Math.Min(codeParts.Length - 1, 4);
-
-                    itemName = string.Join(" ", codeParts.Skip(1).Take(itemNameParts));
-
-                    spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList
-                        .Find(item => item.name.Equals(itemName, StringComparison.OrdinalIgnoreCase));
+                   itemName = String.Join(" ", codeParts[1], codeParts[2]);
+                    TestMod.mls.LogInfo(itemName);
+                    spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));//Fix search Item Pack
 
                     if (spawnItem == null)
                     {
