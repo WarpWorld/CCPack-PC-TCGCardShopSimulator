@@ -301,6 +301,7 @@ public class TCGCardShopSimulator : SimpleTCPPack
         new("Auto Open Destiny Epic Pack", "openpack_destiny_epic_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 150 },
         new("Auto Open Destiny Legend Pack", "openpack_destiny_legend_pack") { Description = "Automatically spawn in an open a pack, as long as the player is not doing anything else", Category = "Auto Open", Price = 200 },
 
-        new("Spawn Bread", "spawn_bread") { Description = "Spawn Bread!", Category = "Bread", Price = 250 }
+        new("Spawn Bread", "spawn_bread") { Description = "Spawn Bread!", Category = "Food", Price = 250 }
+        new("Spawn Milk", "spawn_milk") { Description = "Spawn Milk!", Category = "Food", Price = 250 }
     };
 }
