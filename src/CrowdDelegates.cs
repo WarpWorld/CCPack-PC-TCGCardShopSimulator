@@ -13,6 +13,7 @@ using Dummiesman;
 using static UnityEngine.ImageConversion;
 using System.Collections;
 using System.Net;
+using DG.Tweening.Plugins.Core.PathCore;
 
 
 namespace BepinControl
@@ -25,6 +26,75 @@ namespace BepinControl
     {
         public static System.Random rnd = new System.Random();
         public static int maxBoxCount = 100;
+
+        public AssetBundle bundle; // Make sure this is assigned when the plugin loads
+
+        private static GameObject breadPrefab;
+        private static GameObject milkPrefab;
+
+        // Static flag to ensure assets are loaded only once
+        private static bool loaded = false;
+
+        // Load all assets from the bundle and store them
+        public void LoadAssetsFromBundle()
+        {
+            if (loaded) return; // Only load once
+
+            //TestMod.mls.LogDebug("PATH " + System.IO.Path.Combine(Paths.PluginPath, "CrowdControl", "food"));
+
+            bundle = AssetBundle.LoadFromFile(System.IO.Path.Combine(Paths.PluginPath, "CrowdControl", "food"));
+            if (bundle == null)
+            {
+                Debug.LogError("Failed to load AssetBundle.");
+                return;
+            }
+
+            milkPrefab = bundle.LoadAsset<GameObject>("MilkGroup");
+            breadPrefab = bundle.LoadAsset<GameObject>("BreadGroup");
+
+            if (milkPrefab == null)
+            {
+                Debug.LogError("Milk prefab not found in AssetBundle.");
+            }
+
+            if (breadPrefab == null)
+            {
+                Debug.LogError("Bread prefab not found in AssetBundle.");
+            }
+
+            loaded = true; // Mark as loaded after successful loading
+        }
+
+        // Method to spawn the bread asset
+        public void Spawn_Bread(Vector3 position, Quaternion rotation)
+        {
+            if (breadPrefab != null)
+            {
+                GameObject breadInstance = UnityEngine.Object.Instantiate(breadPrefab, position, rotation);
+                breadInstance.AddComponent<InteractableObject2>();
+            }
+            else
+            {
+                Debug.LogError("Bread prefab not loaded.");
+            }
+        }
+
+        // Method to spawn the milk asset
+        public void Spawn_Milk(Vector3 position, Quaternion rotation)
+        {
+            if (milkPrefab != null)
+            {
+                GameObject milkInstance = UnityEngine.Object.Instantiate(milkPrefab, position, rotation);
+                milkInstance.AddComponent<InteractableObject2>();
+            }
+            else
+            {
+                Debug.LogError("Milk prefab not loaded.");
+            }
+        }
+
+
+
 
         public static CrowdResponse ToggleLights(ControlClient client, CrowdRequest req)
         {
@@ -872,20 +942,6 @@ namespace BepinControl
         }
 
 
-        private static Texture2D LoadTexture(string path)
-        {
-            if (File.Exists(path))
-            {
-                byte[] fileData = File.ReadAllBytes(path);
-                Texture2D texture = new Texture2D(2, 2);  // Create a new Texture2D
-                if (texture.LoadImage(fileData))  // Load the image from the file
-                {
-                    return texture;  // Return the loaded texture
-                }
-            }
-            Debug.LogError("Texture not found or failed to load: " + path);
-            return null;  // Return null if the texture couldn't be loaded
-        }
 
         public static CrowdResponse OpenCardPack(ControlClient client, CrowdRequest req)
         {
@@ -1004,6 +1060,8 @@ namespace BepinControl
             TestMod.autoOpenCards = false;
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+        
+
 
         public static CrowdResponse SpawnBread(ControlClient client, CrowdRequest req)
         {
@@ -1016,80 +1074,65 @@ namespace BepinControl
             Quaternion rotation = pos.rotation;
 
 
-            string objPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.obj");
-            string mtlPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.mtl");
-            string pngPath = Path.Combine(Paths.PluginPath, "CrowdControl", "Bread.png");
+
+        TestMod.ActionQueue.Enqueue(() =>
+        {
+       
+            CrowdDelegates crowdDelegatesInstance = new CrowdDelegates();
+
+            crowdDelegatesInstance.LoadAssetsFromBundle();
+
+            for (int i = 0; i < 5; i++)
+            {
+                float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
+                Vector3 spawnPosition = new Vector3(
+                    pos.position.x + spawnDifference,
+                    pos.position.y,
+                    pos.position.z
+                );
+
+                crowdDelegatesInstance.Spawn_Bread(spawnPosition, Quaternion.identity);
+            }
+        });
+
+        return new CrowdResponse(req.GetReqID(), status, message);
+        }
 
 
-            if (!File.Exists(objPath) || !File.Exists(mtlPath) || !File.Exists(pngPath)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Cannot find bread");
+        public static CrowdResponse SpawnMilk(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+
+            Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+            Vector3 position = pos.position;
+            Quaternion rotation = pos.rotation;
+
+
 
             TestMod.ActionQueue.Enqueue(() =>
             {
 
-              
-                    GameObject originalBread = null;
+                CrowdDelegates crowdDelegatesInstance = new CrowdDelegates();
 
-                    using (FileStream objStream = new FileStream(objPath, FileMode.Open, FileAccess.Read))
-                    using (FileStream mtlStream = new FileStream(mtlPath, FileMode.Open, FileAccess.Read))
-                    {
-                        originalBread = new OBJLoader().Load(objStream, mtlStream);
+                crowdDelegatesInstance.LoadAssetsFromBundle();
 
+                for (int i = 0; i < 5; i++)
+                {
+                    float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
+                    Vector3 spawnPosition = new Vector3(
+                        pos.position.x + spawnDifference,
+                        pos.position.y,
+                        pos.position.z
+                    );
 
-                        originalBread.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
-                        float spawnHeightAbovePlayer = UnityEngine.Random.Range(5.0f, 10.0f);
-                        Vector3 spawnPosition = new Vector3(
-                            pos.position.x,
-                            pos.position.y + spawnHeightAbovePlayer,
-                            pos.position.z
-                        );
-
-                        GameObject breadInstance = UnityEngine.Object.Instantiate(originalBread, spawnPosition, Quaternion.identity);
-                        Renderer renderer = breadInstance.GetComponent<Renderer>();
-
-                        if (renderer != null)
-                        {
-                            if (renderer.material.shader.name != "Standard") renderer.material.shader = Shader.Find("Standard");
-
-                            if (renderer.material.mainTexture == null)
-                            {
-                                Texture2D defaultTexture = LoadTexture(pngPath);
-                                renderer.material.mainTexture = defaultTexture;
-                            }
-                        }
-
-
-                        if (breadInstance.GetComponent<Collider>() == null)
-                        {
-                            BoxCollider boxCollider = breadInstance.AddComponent<BoxCollider>();
-
-
-                        }
-
-                        Rigidbody rb = breadInstance.GetComponent<Rigidbody>();
-                        if (rb == null)
-                        {
-                            rb = breadInstance.AddComponent<Rigidbody>();
-                            rb.mass = 1.0f;
-                            rb.useGravity = true;
-                            rb.drag = 0.5f;
-                            rb.angularDrag = 0.05f;
-                        }
-
-                        breadInstance.AddComponent<InteractableObject2>();
-                    }
-
-
+                    crowdDelegatesInstance.Spawn_Milk(spawnPosition, Quaternion.identity);
+                }
             });
-
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-
-
 
         public class InteractableObject2 : MonoBehaviour
         {
@@ -1097,11 +1140,11 @@ namespace BepinControl
 
             private bool isHeld = false;
             private Transform playerCamera;
-            private Rigidbody rb;
+            
             private Color originalColor;
 
             private Renderer renderer;
-            private Collider breadCollider;
+            
 
             private Transform playerTransform;
 
@@ -1130,22 +1173,34 @@ namespace BepinControl
                     }
                 }
 
-                rb = GetComponent<Rigidbody>();
+            }
 
-
-                renderer = GetComponent<Renderer>();
-                if (renderer != null && renderer.material != null)
+            void OnGUI()
+            {
+                if (isHeld)
                 {
-                    originalColor = renderer.material.color;
+                    // Create a style for the text
+                    GUIStyle textStyle = new GUIStyle();
+                    textStyle.fontSize = 24;
+                    textStyle.normal.textColor = Color.white;
+                    textStyle.alignment = TextAnchor.MiddleCenter; // Center the text
+                    textStyle.richText = true; // Enable rich text formatting
+
+                    // Create the text with different colors for F and E
+                    string instructionText = "Press<color=green>F</color> to Drop\nPress<color=green>E</color> to Eat";
+
+                    // Calculate the position for the text to be at the middle bottom of the screen
+                    float width = 300;
+                    float height = 100;
+                    float xPos = (Screen.width - width) / 2; // Center horizontally
+                    float yPos = Screen.height - height - 20; // Position slightly above the bottom
+
+                    // Set the position and size of the text box
+                    Rect rect = new Rect(xPos, yPos, width, height);
+
+                    // Draw the instructions on the screen with rich text formatting
+                    GUI.Label(rect, instructionText, textStyle);
                 }
-
-
-                breadCollider = GetComponent<Collider>();
-                if (breadCollider == null)
-                {
-                    breadCollider = gameObject.AddComponent<BoxCollider>();
-                }
-
             }
 
 
@@ -1157,15 +1212,16 @@ namespace BepinControl
                 {
                     SmoothlyHoldObjectInFront();
 
-
                     if (Input.GetKeyDown(KeyCode.F))
                     {
                         ThrowObject();
+                        isHoldingObject = false;
                     }
 
                     if (Input.GetKeyDown(KeyCode.E))
                     {
                         EatObject();
+                        isHoldingObject = false;
                     }
                 }
                 else
@@ -1180,20 +1236,60 @@ namespace BepinControl
                 }
             }
 
+            private bool isHoldingObject = false;  // Track whether the object is held
+            private Vector3 relativePositionToCamera;  // The position relative to the camera/player
+            private float heightOffset = 0.5f;  // Adjust this value for the height
+
             private void SmoothlyHoldObjectInFront()
             {
-                rb.isKinematic = true;
-                breadCollider.enabled = false;
+                // Get the player's transform and the camera's transform
+                Transform playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+                Transform cameraTransform = CSingleton<InteractionPlayerController>.Instance.m_CameraController.transform;
 
-                Vector3 targetPosition = playerCamera.position + playerCamera.forward * 0.7f;
-                targetPosition.y -= 0.2f;
+                // If the object is already being held, keep it in the same relative position
+                if (isHoldingObject)
+                {
+                    // Calculate the new position based on the camera's current position and the saved relative position
+                    Vector3 targetPosition2 = cameraTransform.position + cameraTransform.TransformDirection(relativePositionToCamera);
+                    transform.position = targetPosition2;
 
+                    // Ensure the object maintains the same orientation relative to the camera
+                    transform.rotation = Quaternion.LookRotation(cameraTransform.forward);
 
+                    return;  // Exit early since we're holding the object
+                }
+
+                // Make the object kinematic and disable the collider for holding
+                
+
+                // Calculate the target position in front of the player, relative to the camera's direction
+                Vector3 targetPosition = playerTransform.position
+                                         + cameraTransform.forward * 0.7f  // Slightly in front of the player
+                                         + cameraTransform.right * 0.5f;   // Slightly to the right of the player
+
+                // Adjust the Y position to lower the object based on the height offset
+                targetPosition.y = playerTransform.position.y + heightOffset;  // Adjust height above the player (lower it)
+
+                // Move the object smoothly towards the target position
                 transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
 
-                transform.rotation = Quaternion.LookRotation(playerCamera.forward);
-                transform.Rotate(Vector3.right, 90.0f);
+                // Check if the object is close enough to the target position to stop moving it
+                if (Vector3.Distance(transform.position, targetPosition) < 0.01f)  // Close enough to target
+                {
+                    isHoldingObject = true;  // Mark the object as held
+                    relativePositionToCamera = cameraTransform.InverseTransformDirection(transform.position - cameraTransform.position);  // Store the relative position to the camera
+
+                    // Apply a random rotation of 0, 90, 180, or 270 degrees on the Y-axis
+                    int randomAngleIndex = UnityEngine.Random.Range(0, 4);  // Generates 0, 1, 2, or 3
+                    float randomAngle = randomAngleIndex * 90.0f;
+                    transform.GetChild(0).transform.Rotate(Vector3.up, randomAngle);
+                    //transform.Rotate(Vector3.up, randomAngle);  // Rotate the object on the Y-axis
+                }
+
+                // Make the object face the same direction as the camera
+                transform.rotation = Quaternion.LookRotation(cameraTransform.forward);
             }
+
 
             private void TryPickupObjectUnderMouse()
             {
@@ -1204,47 +1300,46 @@ namespace BepinControl
 
                 foreach (RaycastHit hit in hits)
                 {
-                    Debug.Log("Raycast hit: " + hit.collider.gameObject.name);
 
-                    if (hit.collider != null && hit.collider.gameObject == gameObject)
+                    if(!hit.rigidbody)
+                    {
+                        continue;
+                    }
+
+
+                    if (hit.rigidbody != null && hit.rigidbody.gameObject == gameObject)
                     {
                         breadHit = true;
-                        Debug.Log("Bread object hit, attempting to pick it up.");
                         break;
                     }
                 }
-
+                
                 if (breadHit)
                 {
                     PickUpObject();
                 }
-                else
-                {
-                    Debug.Log("No bread object found by the raycast.");
-                }
+               
             }
 
             private void PickUpObject()
             {
                 isHeld = true;
                 currentlyHeldObject = this;
-                rb.isKinematic = true;
-                breadCollider.enabled = false;
-                Debug.Log("Bread object picked up.");
+                
+                
             }
 
             private void ReleaseObject()
             {
-                Debug.Log("Attempting to release the bread object.");
 
                 isHeld = false;
                 currentlyHeldObject = null;
 
 
-                rb.isKinematic = false;
-                breadCollider.enabled = true;
+                
+                
 
-                Debug.Log("Bread object released: Kinematic = " + rb.isKinematic + ", Collider enabled = " + breadCollider.enabled);
+                
 
 
                 StartCoroutine(IgnorePlayerCollisionTemporarily());
@@ -1252,11 +1347,10 @@ namespace BepinControl
 
             private void ThrowObject()
             {
-                Debug.Log("Throwing the bread object.");
-                rb.isKinematic = false;
+                
 
                 Vector3 throwForce = playerCamera.forward * 10f;
-                rb.AddForce(throwForce, ForceMode.Impulse);
+                
 
 
                 ReleaseObject();
@@ -1268,7 +1362,7 @@ namespace BepinControl
 
 
                 transform.rotation = Quaternion.LookRotation(playerCamera.forward);
-                transform.Rotate(Vector3.right, 90.0f); // Rotate to lay flat on the camera
+                transform.Rotate(Vector3.right, 90.0f); 
 
 
 
@@ -1282,6 +1376,13 @@ namespace BepinControl
                 float duration = 1.0f;
 
                 Vector3 initialPosition = transform.position;
+
+                AudioSource audioSource = transform.GetChild(0).GetComponent<AudioSource>();
+
+                if (audioSource != null)
+                {
+                    audioSource.Play();
+                }
 
                 while (elapsedTime < duration)
                 {
@@ -1302,17 +1403,13 @@ namespace BepinControl
 
                 if (playerCollider != null)
                 {
-                    Physics.IgnoreCollision(breadCollider, playerCollider, true);  // Ignore collisions
+                    
 
                     yield return new WaitForSeconds(interactionDelay);
 
-                    Physics.IgnoreCollision(breadCollider, playerCollider, false);
-                    Debug.Log("Bread object interaction with player re-enabled.");
+                    
                 }
-                else
-                {
-                    Debug.LogError("Player collider not found.");
-                }
+               
             }
         }
 

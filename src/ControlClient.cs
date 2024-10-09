@@ -338,6 +338,7 @@ namespace BepinControl
                 {"openpack_destiny_legend_pack", CrowdDelegates.OpenCardPack },
 
                 {"spawn_bread", CrowdDelegates.SpawnBread },
+                {"spawn_milk", CrowdDelegates.SpawnMilk },
 
 
 
