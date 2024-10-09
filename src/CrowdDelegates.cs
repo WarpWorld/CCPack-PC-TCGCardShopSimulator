@@ -1060,7 +1060,7 @@ namespace BepinControl
             TestMod.autoOpenCards = false;
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        
+
 
 
         public static CrowdResponse SpawnBread(ControlClient client, CrowdRequest req)
@@ -1072,32 +1072,34 @@ namespace BepinControl
             Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
             Vector3 position = pos.position;
             Quaternion rotation = pos.rotation;
+            Transform playerCamera = Camera.main?.transform ?? UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
+            Vector3 forwardDirection = playerCamera.forward;
+
+            if (!playerCamera) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
 
 
-
-        TestMod.ActionQueue.Enqueue(() =>
-        {
-       
-            CrowdDelegates crowdDelegatesInstance = new CrowdDelegates();
-
-            crowdDelegatesInstance.LoadAssetsFromBundle();
-
-            for (int i = 0; i < 5; i++)
+            TestMod.ActionQueue.Enqueue(() =>
             {
-                float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
-                Vector3 spawnPosition = new Vector3(
-                    pos.position.x + spawnDifference,
-                    pos.position.y,
-                    pos.position.z
-                );
 
-                crowdDelegatesInstance.Spawn_Bread(spawnPosition, Quaternion.identity);
-            }
-        });
+                CrowdDelegates crowdDelegatesInstance = new CrowdDelegates();
 
-        return new CrowdResponse(req.GetReqID(), status, message);
+                crowdDelegatesInstance.LoadAssetsFromBundle();
+
+                for (int i = 0; i < 1; i++)
+                {
+                    float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
+                    Vector3 spawnPosition = new Vector3(
+                        playerCamera.position.x + forwardDirection.x * spawnDifference,
+                        playerCamera.position.y + 1.0f,
+                        playerCamera.position.z + forwardDirection.z * spawnDifference
+                    );
+
+                    crowdDelegatesInstance.Spawn_Bread(spawnPosition, Quaternion.identity);
+                }
+            });
+
+            return new CrowdResponse(req.GetReqID(), status, message);
         }
-
 
         public static CrowdResponse SpawnMilk(ControlClient client, CrowdRequest req)
         {
@@ -1108,7 +1110,10 @@ namespace BepinControl
             Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
             Vector3 position = pos.position;
             Quaternion rotation = pos.rotation;
+            Transform playerCamera = Camera.main?.transform ?? UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
+            Vector3 forwardDirection = playerCamera.forward;
 
+            if (!playerCamera) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
 
 
             TestMod.ActionQueue.Enqueue(() =>
@@ -1118,13 +1123,13 @@ namespace BepinControl
 
                 crowdDelegatesInstance.LoadAssetsFromBundle();
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 1; i++)
                 {
                     float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
                     Vector3 spawnPosition = new Vector3(
-                        pos.position.x + spawnDifference,
-                        pos.position.y,
-                        pos.position.z
+                        playerCamera.position.x + forwardDirection.x * spawnDifference,
+                        playerCamera.position.y + 1.0f,
+                        playerCamera.position.z + forwardDirection.z * spawnDifference
                     );
 
                     crowdDelegatesInstance.Spawn_Milk(spawnPosition, Quaternion.identity);
@@ -1187,7 +1192,7 @@ namespace BepinControl
                     textStyle.richText = true; // Enable rich text formatting
 
                     // Create the text with different colors for F and E
-                    string instructionText = "Press<color=green>F</color> to Drop\nPress<color=green>E</color> to Eat";
+                    string instructionText = "Press F to Drop\nPress E to Eat";
 
                     // Calculate the position for the text to be at the middle bottom of the screen
                     float width = 300;
