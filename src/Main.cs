@@ -22,7 +22,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.8.0";
+        private const string modVersion = "1.0.10.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -672,24 +672,24 @@ namespace BepinControl
                     __result = limit;
                     return false;
                 }
-                if (TestMod.CustomersOverpay)
-                {
-                    float badLuck = Random.Range(0.0f, 1.0f);
-                    float randomChange = Random.Range(0.00f, 0.99f);
+                //if (TestMod.CustomersOverpay)
+                //{
+                    //float badLuck = Random.Range(0.0f, 1.0f);
+                   // float randomChange = Random.Range(0.00f, 0.99f);
 
-                    if (badLuck < 0.1f)
-                    {
-                        __result = __result + Random.Range(1, 100) + 1000 + randomChange;
+                   // if (badLuck < 0.1f)
+                   // {
+                       // __result = __result + Random.Range(1, 100) + 1000 + randomChange;
 
-                    }
-                    else
-                    {
-                        __result = __result + Random.Range(1, 100) + randomChange;
-                    }
+                  //  }
+                   // else
+                   // {
+                       // __result = __result + Random.Range(1, 100) + randomChange;
+                  //  }
 
-                    return false;
+                    //return false;
 
-                }
+                //}
                 return true;
             }
         }

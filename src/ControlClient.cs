@@ -328,8 +328,6 @@ namespace BepinControl
                 {"give_system_gate_#2",CrowdDelegates.GiveItem },
                 {"giveatplayer_system_gate_#2",CrowdDelegates.GiveItemAtPlayer },
 
-
-
                 {"openpack_common_pack", CrowdDelegates.OpenCardPack },
                 {"openpack_rare_pack", CrowdDelegates.OpenCardPack },
                 {"openpack_epic_pack", CrowdDelegates.OpenCardPack },
