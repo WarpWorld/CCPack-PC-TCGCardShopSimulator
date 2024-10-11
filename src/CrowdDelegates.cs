@@ -164,6 +164,8 @@ namespace BepinControl
             string message = "";
             CustomerManager CM = CustomerManager.Instance;
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            int CustomerTotal = CustomerManager.Instance.m_TotalCurrentCustomerCount;//make sure we have < 28 Customers when we spawn
+            if (CustomerTotal == CustomerManager.Instance.m_CustomerCountMax) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Too Many Customers in Shop");//Too many Customers?
             if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
@@ -178,42 +180,13 @@ namespace BepinControl
                     }
                     TestMod.NameOverride = req.viewer;
                     TestMod.isSmelly = false;
-                    CustomerManager.Instance.m_CustomerCountMax = +1;
+                    CustomerManager.Instance.m_CustomerCountMax += 1;
                     callFunc(CustomerManager.Instance, "AddCustomerPrefab", null);
-                    Customer newCustomer = CM.GetNewCustomer(false);
+                    Customer newCustomer = CM.GetNewCustomer(false);//spawn not smelly
 
                     TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
                 });
-            }
-            catch (Exception e)
-            {
-                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
-                status = CrowdResponse.Status.STATUS_RETRY;
-            }
-
-            return new CrowdResponse(req.GetReqID(), status, message);
-        }
-        public static CrowdResponse EmptyCleansers(ControlClient client, CrowdRequest req)
-        {
-            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
-            string message = "";
-            InteractableAutoCleanser IAC = CSingleton<InteractableAutoCleanser>.Instance;
-            if (IAC.m_StoredItemList.Count == 0 || IAC.m_PosList.Count == 0) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Cleanser, or no Cleaners");
-            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
-            if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
-            try
-            {
-                foreach (var cleanser in IAC.GetStoredItemList())
-                {
-                    if (cleanser != null)
-                    {
-                        TestMod.ActionQueue.Enqueue(() =>
-                        {
-                            cleanser.SetContentFill(0f);
-                        });
-                    }
-                }
             }
             catch (Exception e)
             {
@@ -228,7 +201,8 @@ namespace BepinControl
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
-            CustomerManager CM = CustomerManager.Instance;
+            CustomerManager CM = CustomerManager.Instance; int CustomerTotal = CustomerManager.Instance.m_TotalCurrentCustomerCount;//make sure we have < 28 Customers when we spawn
+            if (CustomerTotal == CustomerManager.Instance.m_CustomerCountMax) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Too Many Customers in Shop");//Too many Customers?
             if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return new CrowdResponse(id: req.GetReqID(), status: CrowdResponse.Status.STATUS_RETRY, message: "Store is Closed");
             try
             {
@@ -245,7 +219,7 @@ namespace BepinControl
                     }
                     TestMod.isSmelly = true;
                     TestMod.NameOverride = req.viewer;
-                    Customer Smelly = CM.GetNewCustomer(true);
+                    Customer Smelly = CM.GetNewCustomer(true);//Spawn him as Smelly
                     if (Smelly != null)
                     {
                         Smelly.SetSmelly();

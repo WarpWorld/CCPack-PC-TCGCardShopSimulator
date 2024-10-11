@@ -78,7 +78,6 @@ namespace BepinControl
 
                 {"giveempty", CrowdDelegates.GiveEmpty },
                 {"giveplayerhugeempty", CrowdDelegates.SendHugeEmpty },
-                {"emptycleaners", CrowdDelegates.EmptyCleansers },
                 //{"give_common_pack_(32)", CrowdDelegates.GiveItem },
                 {"give_common_pack_(64)", CrowdDelegates.GiveItem },
                 //{"give_common_box_(4)", CrowdDelegates.GiveItem },
