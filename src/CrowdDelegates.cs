@@ -924,6 +924,11 @@ namespace BepinControl
             string itemName = "";
             RestockData spawnItem = null;
 
+            int dur = 10;
+            if (req.duration > 0) dur = req.duration / 1000;
+            if (TimedThread.isRunning(TimedType.OPENING_PACK)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+
             string[] codeParts = req.code.Split('_');
 
             if (codeParts.Length > 1)
@@ -965,7 +970,7 @@ namespace BepinControl
             {
 
 
-                Debug.Log(interactionPlayerController.m_CurrentGameState);
+                //Debug.Log(interactionPlayerController.m_CurrentGameState);
 
                 TestMod.ActionQueue.Enqueue(() =>
                 {
@@ -980,6 +985,8 @@ namespace BepinControl
                     interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
 
                     FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                    new Thread(new TimedThread(req.GetReqID(), TimedType.OPENING_PACK, dur * 1000).Run).Start();
 
                     TestMod.autoOpenCards = 1;
                     if (itemListField != null)
@@ -1028,13 +1035,13 @@ namespace BepinControl
             {
                 TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
                 TestMod.autoOpenCards = 2;
-
                 status = CrowdResponse.Status.STATUS_RETRY;
             }
 
-            TestMod.autoOpenCards = 2;
+            //TestMod.autoOpenCards = 2;
 
-            return new CrowdResponse(req.GetReqID(), status, message);
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+
         }
 
 
