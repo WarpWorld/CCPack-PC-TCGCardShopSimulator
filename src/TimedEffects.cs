@@ -29,7 +29,8 @@ namespace BepinControl
         FORCE_LARGE_BILLS,
         ALLOW_MISCHARGE,
         WORKERS_FAST,
-        HUGE_BOXES
+        HUGE_BOXES,
+        OPENING_PACK
     }
 
 
@@ -162,6 +163,14 @@ namespace BepinControl
                         });
                         break;
                     }
+                case TimedType.OPENING_PACK:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            TestMod.autoOpenCards = 1;
+                        });
+                        break;
+                    }
             }
         }
 
@@ -272,6 +281,14 @@ namespace BepinControl
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 TestMod.LargeBills = false;
+                            });
+                            break;
+                        }
+                    case TimedType.OPENING_PACK:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                TestMod.autoOpenCards = 2;
                             });
                             break;
                         }

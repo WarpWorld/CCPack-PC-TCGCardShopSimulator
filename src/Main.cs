@@ -646,6 +646,8 @@ namespace BepinControl
                 var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 autoFireKeydown.SetValue(__instance, autoOpenCards);
 
+                //2 has us set it back to false and then go back to defaults
+                if (autoOpenCards == 2) autoOpenCards = 0;
                 //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
             }
         }
