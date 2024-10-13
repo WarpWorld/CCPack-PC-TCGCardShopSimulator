@@ -981,7 +981,7 @@ namespace BepinControl
 
                     FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                    TestMod.autoOpenCards = true;
+                    TestMod.autoOpenCards = 1;
                     if (itemListField != null)
                     {
                         List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
@@ -1027,11 +1027,13 @@ namespace BepinControl
             catch (Exception e)
             {
                 TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
-                TestMod.autoOpenCards = false;
+                TestMod.autoOpenCards = 2;
+
                 status = CrowdResponse.Status.STATUS_RETRY;
             }
 
-            TestMod.autoOpenCards = false;
+            TestMod.autoOpenCards = 2;
+
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 

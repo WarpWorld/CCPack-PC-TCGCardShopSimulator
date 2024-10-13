@@ -22,7 +22,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.12.0";
+        private const string modVersion = "1.0.13.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -75,7 +75,7 @@ namespace BepinControl
         private static StreamWriter twitchWriter;
 
         private static TextMeshPro chatStatusText;
-        public static bool autoOpenCards = false;
+        public static int autoOpenCards = 0;
 
 
         void Awake()
@@ -638,12 +638,13 @@ namespace BepinControl
         {
             static void Postfix(CardOpeningSequence __instance)
             {
-                if (!autoOpenCards) return;
+                if (autoOpenCards == 0) return;
+                bool autoOpen = autoOpenCards == 1 ? true : false;
                 var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                autoFireField.SetValue(__instance, true);
+                autoFireField.SetValue(__instance, autoOpenCards);
 
                 var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                autoFireKeydown.SetValue(__instance, true);
+                autoFireKeydown.SetValue(__instance, autoOpenCards);
 
                 //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
             }
