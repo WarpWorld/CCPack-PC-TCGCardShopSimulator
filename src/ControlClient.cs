@@ -61,6 +61,7 @@ namespace BepinControl
                 {"allsmelly", CrowdDelegates.AllSmellyCustomers },
                 {"open_store", CrowdDelegates.ShopControls },
                 {"close_store", CrowdDelegates.ShopControls },
+                {"renamestore", CrowdDelegates.ShopControls },
                 {"unlockwh", CrowdDelegates.UnlockWarehouse },
                 {"upgradewh", CrowdDelegates.UpgradeWarehouse },
                 {"upgradestore", CrowdDelegates.UpgradeStore },
@@ -463,7 +464,6 @@ namespace BepinControl
             {
 
                 TestMod.mls.LogInfo("Attempting to connect to Crowd Control");
-
                 try
                 {
                     Socket = new Socket(Endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);

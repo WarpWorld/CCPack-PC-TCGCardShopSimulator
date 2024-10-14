@@ -9,11 +9,11 @@ using System.Reflection;
 using System.Threading;
 using TMPro;
 using UnityEngine;
-using Dummiesman;
 using static UnityEngine.ImageConversion;
 using System.Collections;
 using System.Net;
 using DG.Tweening.Plugins.Core.PathCore;
+using DG.Tweening.Plugins.Core;
 
 
 namespace BepinControl
@@ -695,6 +695,35 @@ namespace BepinControl
                         CPlayerData.m_IsShopOnceOpen = true;
                     });
                 }
+                else if (enteredText[0] == "renamestore")
+                {
+                    try
+                    {
+                        TutorialManager tutorialManager = UnityEngine.Object.FindObjectOfType<TutorialManager>();
+                        if (tutorialManager == null)
+                        {
+                            TestMod.mls.LogInfo("Failed to find Tutorial Manager..");
+                            return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Shop To Rename? What?");
+                        }
+                        if (tutorialManager.m_ShopRenamer == null)
+                        {
+                            TestMod.mls.LogInfo("Failed to initialize ShopRenamer.");
+                            return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Shop To Rename? What?");
+                        }
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            CSingleton<InteractionPlayerController>.Instance.EnterUIMode();
+                            CSingleton<InteractionPlayerController>.Instance.EnterLockMoveMode();
+                            tutorialManager.m_ShopRenamer.OnPressGoNextButton();
+                            tutorialManager.m_ShopRenamer.m_SetNameInput.ActivateInputField();
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                        return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Failed to Rename Store");
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -922,24 +951,19 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
             string itemName = "";
-            RestockData spawnItem = null;
-
-            int dur = 10;
+            int dur = 8;
             if (req.duration > 0) dur = req.duration / 1000;
-            if (TimedThread.isRunning(TimedType.OPENING_PACK)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
-
-
             string[] codeParts = req.code.Split('_');
 
             if (codeParts.Length > 1)
             {
                 try
                 {
-                   itemName = String.Join(" ", codeParts[1], codeParts[2]);
+                    itemName = String.Join(" ", codeParts[1], codeParts[2]);
                     TestMod.mls.LogInfo(itemName);
-                    spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));//Fix search Item Pack
+                    TestMod.spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));//Fix search Item Pack
 
-                    if (spawnItem == null)
+                    if (TestMod.spawnItem == null)
                     {
                         status = CrowdResponse.Status.STATUS_FAILURE;
                         message = "Cannot find card pack to spawn.";
@@ -956,6 +980,7 @@ namespace BepinControl
 
             InteractionPlayerController interactionPlayerController = CSingleton<InteractionPlayerController>.Instance;
 
+            if (TimedThread.isRunning(TimedType.OPENING_PACK)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
 
             if (interactionPlayerController.m_CurrentGameState != EGameState.DefaultState)
@@ -970,7 +995,7 @@ namespace BepinControl
             {
 
 
-                //Debug.Log(interactionPlayerController.m_CurrentGameState);
+                Debug.Log(interactionPlayerController.m_CurrentGameState);
 
                 TestMod.ActionQueue.Enqueue(() =>
                 {
@@ -980,15 +1005,13 @@ namespace BepinControl
                     Quaternion rotation = pos.rotation;
 
 
-                    InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
-                    interactablePackagingBox_Item.FillBoxWithItem(spawnItem.itemType, 1);
-                    interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
-
+                    TestMod.cardPack = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                    TestMod.cardPack.FillBoxWithItem(TestMod.spawnItem.itemType, 1);
+                    TestMod.cardPack.name = TestMod.cardPack.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
+                    /*
                     FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                    new Thread(new TimedThread(req.GetReqID(), TimedType.OPENING_PACK, dur * 1000).Run).Start();
-
-                    TestMod.autoOpenCards = 1;
+                    TestMod.autoOpenPacks = true;
                     if (itemListField != null)
                     {
                         List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
@@ -1026,7 +1049,7 @@ namespace BepinControl
                             }
                         }
                     }
-
+                    TestMod.autoOpenPacks = false;*/
                 });
 
 
@@ -1034,14 +1057,11 @@ namespace BepinControl
             catch (Exception e)
             {
                 TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
-                TestMod.autoOpenCards = 2;
                 status = CrowdResponse.Status.STATUS_RETRY;
             }
 
-            //TestMod.autoOpenCards = 2;
-
+            new Thread(new TimedThread(req.GetReqID(), TimedType.OPENING_PACK, dur * 1000).Run).Start();
             return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
-
         }
 
 
