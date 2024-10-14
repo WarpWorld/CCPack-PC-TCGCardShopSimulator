@@ -101,18 +101,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BinaryExtensions.cs" />
-    <Compile Include="BMPLoader.cs" />
-    <Compile Include="ColorExtensions.cs" />
-    <Compile Include="DDSLoader.cs" />
-    <Compile Include="ImageLoader.cs" />
-    <Compile Include="ImageLoaderHelper.cs" />
-    <Compile Include="ImageUtils.cs" />
-    <Compile Include="MTLLoader.cs" />
-    <Compile Include="OBJLoader.cs" />
-    <Compile Include="OBJLoaderHelper.cs" />
-    <Compile Include="OBJObjectBuilder.cs" />
-    <Compile Include="TGALoader.cs" />
     <Compile Include="TimedEffects.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="ControlClient.cs" />

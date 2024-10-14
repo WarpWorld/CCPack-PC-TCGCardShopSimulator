@@ -4,7 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
+using UnityEngine.Localization.Pseudo;
+using UnityEngine;
 
 namespace BepinControl
 {
@@ -167,7 +170,41 @@ namespace BepinControl
                     {
                         TestMod.ActionQueue.Enqueue(() =>
                         {
-                            TestMod.autoOpenCards = 1;
+                            TestMod.autoOpenPacks = true;
+                            FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                            if (itemListField != null)
+                            {
+                                List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
+
+                                if (spawnedItems != null)
+                                {
+                                    Transform playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+
+                                    Item closestItem = null;
+                                    float shortestDistance = float.MaxValue;
+
+                                    foreach (Item _item in spawnedItems)
+                                    {
+                                        if (_item.GetItemType() == TestMod.spawnItem.itemType)
+                                        {
+                                            float distanceToPlayer = Vector3.Distance(playerTransform.position, _item.transform.position);
+
+                                            if (distanceToPlayer < shortestDistance)
+                                            {
+                                                shortestDistance = distanceToPlayer;
+                                                closestItem = _item;
+                                            }
+                                        }
+                                    }
+
+                                    if (closestItem != null)
+                                    {
+                                        CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(closestItem);
+                                        TestMod.cardPack.OnDestroyed();
+                                    }
+                                }
+                            }
                         });
                         break;
                     }
@@ -284,11 +321,13 @@ namespace BepinControl
                             });
                             break;
                         }
-                    case TimedType.OPENING_PACK:
+                        case TimedType.OPENING_PACK:
                         {
                             TestMod.ActionQueue.Enqueue(() =>
                             {
-                                TestMod.autoOpenCards = 2;
+                                TestMod.autoOpenPacks = false;
+                                CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFire", false);
+                                CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFireKeydown", false);
                             });
                             break;
                         }

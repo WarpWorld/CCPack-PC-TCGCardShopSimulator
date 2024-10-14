@@ -9,8 +9,6 @@ using TMPro;
 using System.Net.Sockets;
 using System.IO;
 using System.Linq;
-using static BepinControl.TestMod;
-using System.Reflection;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 
@@ -76,6 +74,9 @@ namespace BepinControl
 
         private static TextMeshPro chatStatusText;
         public static int autoOpenCards = 0;
+        public static bool autoOpenPacks = false;
+        public static RestockData spawnItem = null;
+        public static InteractablePackagingBox_Item cardPack = null;
 
 
         void Awake()
@@ -149,6 +150,7 @@ namespace BepinControl
             public static void Postfix(ref TextMeshProUGUI ___m_VersionText)
             {
                 ___m_VersionText.text += "\nCrowd Control version: v" + TestMod.modVersion;
+                ___m_VersionText.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
             }
         }
         public class FaceCamera : MonoBehaviour
@@ -391,7 +393,7 @@ namespace BepinControl
 
 
         //attach this to some game class with a function that runs every frame like the player's Update()
-        [HarmonyPatch(typeof(CGameManager), "Update")]
+        [HarmonyPatch(typeof(InteractionPlayerController), "Update")]//Changed from CPlayerData to InteractionPlayerController, no ill effects
         [HarmonyPrefix]
         static void RunEffects()
         {
@@ -418,29 +420,29 @@ namespace BepinControl
             }
 
 
-            //if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
-            //{
-            // foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
-            //{
-            //TestMod.mls.LogInfo("Name: "+cardPack.name+", Amount: "+cardPack.amount);
+            if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
+            {
+                // foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
+                //{
+                //TestMod.mls.LogInfo("Name: "+cardPack.name+", Amount: "+cardPack.amount);
 
-            //}
-            //foreach (var furniture in InventoryBase.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
-            // {
-            // TestMod.mls.LogInfo(furniture.name);
-            // }
-            //foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-            // {
-            //TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-            //}
-            //  foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-            // {
-            // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-            // }
-            //doneItems = true;
-            //}
+                //}
+                //foreach (var furniture in InventoryBase.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
+                // {
+                // TestMod.mls.LogInfo(furniture.name);
+                // }
+                //foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
+                // {
+                //TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+                //}
+                //  foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
+                // {
+                // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+                // }
+                doneItems = true;
+                }
 
-            while (ActionQueue.Count > 0)
+                while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();
                 action.Invoke();
@@ -636,19 +638,27 @@ namespace BepinControl
         [HarmonyPatch("Update")]
         class Patch_CardOpeningSequence_Update
         {
-            static void Postfix(CardOpeningSequence __instance)
+            static void Postfix(CardOpeningSequence __instance, ref bool ___m_IsAutoFire, ref bool ___m_IsAutoFireKeydown)
             {
-                if (autoOpenCards == 0) return;
-                bool autoOpen = autoOpenCards == 1 ? true : false;
-                var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                autoFireField.SetValue(__instance, autoOpenCards);
+                //if (autoOpenCards == 0) return;
+                //bool autoOpen = autoOpenCards == 1 ? true : false;
+                //var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                //autoFireField.SetValue(__instance, autoOpenCards);
 
-                var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                autoFireKeydown.SetValue(__instance, autoOpenCards);
+                //var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                //autoFireKeydown.SetValue(__instance, autoOpenCards);
 
                 //2 has us set it back to false and then go back to defaults
-                if (autoOpenCards == 2) autoOpenCards = 0;
+                //if (autoOpenCards == 2) autoOpenCards = 0;
                 //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
+
+                if (autoOpenPacks)
+                {
+                    CrowdDelegates.setProperty(__instance, "m_IsAutoFire", true);
+                    CrowdDelegates.setProperty(__instance, "m_IsAutoFireKeydown", true);
+                    ___m_IsAutoFire = true;
+                    ___m_IsAutoFireKeydown = true;
+                }
             }
         }
 
