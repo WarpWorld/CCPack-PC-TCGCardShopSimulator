@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
+using System.Reflection;
 
 namespace BepinControl
 {
@@ -20,7 +21,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.13.0";
+        private const string modVersion = "1.0.14.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -638,29 +639,17 @@ namespace BepinControl
         [HarmonyPatch("Update")]
         class Patch_CardOpeningSequence_Update
         {
+            static readonly FieldInfo autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", BindingFlags.NonPublic | BindingFlags.Instance);
+            static readonly FieldInfo autoFireKeydownField = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", BindingFlags.NonPublic | BindingFlags.Instance);
+
             static void Postfix(CardOpeningSequence __instance, ref bool ___m_IsAutoFire, ref bool ___m_IsAutoFireKeydown)
             {
                 if (autoOpenCards == 0) return;
-                bool autoOpen = autoOpenCards == 1 ? true : false;
-                var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                bool autoOpen = autoOpenCards == 1;
                 autoFireField.SetValue(__instance, autoOpen);
+                autoFireKeydownField.SetValue(__instance, autoOpen);
 
-                var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                autoFireKeydown.SetValue(__instance, autoOpen);
-
-                //2 has us set it back to false and then go back to defaults
                 if (autoOpenCards == 2) autoOpenCards = 0;
-                //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
-                
-                /*
-                if (autoOpenPacks)
-                {
-                    CrowdDelegates.setProperty(__instance, "m_IsAutoFire", true);
-                    CrowdDelegates.setProperty(__instance, "m_IsAutoFireKeydown", true);
-                    ___m_IsAutoFire = true;
-                    ___m_IsAutoFireKeydown = true;
-                }
-                */
             }
         }
 
