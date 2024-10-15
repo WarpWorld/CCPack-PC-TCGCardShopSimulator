@@ -640,18 +640,19 @@ namespace BepinControl
         {
             static void Postfix(CardOpeningSequence __instance, ref bool ___m_IsAutoFire, ref bool ___m_IsAutoFireKeydown)
             {
-                //if (autoOpenCards == 0) return;
-                //bool autoOpen = autoOpenCards == 1 ? true : false;
-                //var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                //autoFireField.SetValue(__instance, autoOpenCards);
+                if (autoOpenCards == 0) return;
+                bool autoOpen = autoOpenCards == 1 ? true : false;
+                var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                autoFireField.SetValue(__instance, autoOpen);
 
-                //var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                //autoFireKeydown.SetValue(__instance, autoOpenCards);
+                var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                autoFireKeydown.SetValue(__instance, autoOpen);
 
                 //2 has us set it back to false and then go back to defaults
-                //if (autoOpenCards == 2) autoOpenCards = 0;
+                if (autoOpenCards == 2) autoOpenCards = 0;
                 //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
-
+                
+                /*
                 if (autoOpenPacks)
                 {
                     CrowdDelegates.setProperty(__instance, "m_IsAutoFire", true);
@@ -659,8 +660,24 @@ namespace BepinControl
                     ___m_IsAutoFire = true;
                     ___m_IsAutoFireKeydown = true;
                 }
+                */
             }
         }
+
+
+            [HarmonyPatch(typeof(CustomerManager), "PlayerFinishOpenCardPack")]
+            [HarmonyPostfix]
+            public static void IsActive_Postfix(CustomerManager __instance)
+            {
+                if (autoOpenCards == 1)
+            {
+                autoOpenCards = 2;
+
+            }
+
+
+            }
+        
 
 
         [HarmonyPatch(typeof(CustomerManager), "GetCustomerExactChangeChance")]
