@@ -951,8 +951,8 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
             string itemName = "";
-            int dur = 8;
-            if (req.duration > 0) dur = req.duration / 1000;
+            RestockData spawnItem = null;
+
             string[] codeParts = req.code.Split('_');
 
             if (codeParts.Length > 1)
@@ -961,9 +961,9 @@ namespace BepinControl
                 {
                     itemName = String.Join(" ", codeParts[1], codeParts[2]);
                     TestMod.mls.LogInfo(itemName);
-                    TestMod.spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));//Fix search Item Pack
+                    spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));//Fix search Item Pack
 
-                    if (TestMod.spawnItem == null)
+                    if (spawnItem == null)
                     {
                         status = CrowdResponse.Status.STATUS_FAILURE;
                         message = "Cannot find card pack to spawn.";
@@ -980,7 +980,6 @@ namespace BepinControl
 
             InteractionPlayerController interactionPlayerController = CSingleton<InteractionPlayerController>.Instance;
 
-            if (TimedThread.isRunning(TimedType.OPENING_PACK)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
 
             if (interactionPlayerController.m_CurrentGameState != EGameState.DefaultState)
@@ -1005,13 +1004,13 @@ namespace BepinControl
                     Quaternion rotation = pos.rotation;
 
 
-                    TestMod.cardPack = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
-                    TestMod.cardPack.FillBoxWithItem(TestMod.spawnItem.itemType, 1);
-                    TestMod.cardPack.name = TestMod.cardPack.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
-                    /*
+                    InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
+                    interactablePackagingBox_Item.FillBoxWithItem(spawnItem.itemType, 1);
+                    interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
+
                     FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                    TestMod.autoOpenPacks = true;
+                    TestMod.autoOpenCards = 1;
                     if (itemListField != null)
                     {
                         List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
@@ -1049,7 +1048,7 @@ namespace BepinControl
                             }
                         }
                     }
-                    TestMod.autoOpenPacks = false;*/
+
                 });
 
 
@@ -1057,11 +1056,14 @@ namespace BepinControl
             catch (Exception e)
             {
                 TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                TestMod.autoOpenCards = 2;
+
                 status = CrowdResponse.Status.STATUS_RETRY;
             }
 
-            new Thread(new TimedThread(req.GetReqID(), TimedType.OPENING_PACK, dur * 1000).Run).Start();
-            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+            TestMod.autoOpenCards = 2;
+
+            return new CrowdResponse(req.GetReqID(), status, message);
         }
 
 
