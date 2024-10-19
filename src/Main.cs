@@ -9,10 +9,9 @@ using TMPro;
 using System.Net.Sockets;
 using System.IO;
 using System.Linq;
-using static BepinControl.TestMod;
-using System.Reflection;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
+using System.Reflection;
 
 namespace BepinControl
 {
@@ -22,7 +21,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.12.0";
+        private const string modVersion = "1.0.14.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -75,7 +74,10 @@ namespace BepinControl
         private static StreamWriter twitchWriter;
 
         private static TextMeshPro chatStatusText;
-        public static bool autoOpenCards = false;
+        public static int autoOpenCards = 0;
+        public static bool autoOpenPacks = false;
+        public static RestockData spawnItem = null;
+        public static InteractablePackagingBox_Item cardPack = null;
 
 
         void Awake()
@@ -149,6 +151,7 @@ namespace BepinControl
             public static void Postfix(ref TextMeshProUGUI ___m_VersionText)
             {
                 ___m_VersionText.text += "\nCrowd Control version: v" + TestMod.modVersion;
+                ___m_VersionText.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
             }
         }
         public class FaceCamera : MonoBehaviour
@@ -391,7 +394,7 @@ namespace BepinControl
 
 
         //attach this to some game class with a function that runs every frame like the player's Update()
-        [HarmonyPatch(typeof(CGameManager), "Update")]
+        [HarmonyPatch(typeof(InteractionPlayerController), "Update")]//Changed from CPlayerData to InteractionPlayerController, no ill effects
         [HarmonyPrefix]
         static void RunEffects()
         {
@@ -418,29 +421,29 @@ namespace BepinControl
             }
 
 
-            //if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
-            //{
-            // foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
-            //{
-            //TestMod.mls.LogInfo("Name: "+cardPack.name+", Amount: "+cardPack.amount);
+            if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
+            {
+                // foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
+                //{
+                //TestMod.mls.LogInfo("Name: "+cardPack.name+", Amount: "+cardPack.amount);
 
-            //}
-            //foreach (var furniture in InventoryBase.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
-            // {
-            // TestMod.mls.LogInfo(furniture.name);
-            // }
-            //foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-            // {
-            //TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-            //}
-            //  foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-            // {
-            // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-            // }
-            //doneItems = true;
-            //}
+                //}
+                //foreach (var furniture in InventoryBase.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
+                // {
+                // TestMod.mls.LogInfo(furniture.name);
+                // }
+                //foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
+                // {
+                //TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+                //}
+                //  foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
+                // {
+                // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+                // }
+                doneItems = true;
+                }
 
-            while (ActionQueue.Count > 0)
+                while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();
                 action.Invoke();
@@ -636,18 +639,34 @@ namespace BepinControl
         [HarmonyPatch("Update")]
         class Patch_CardOpeningSequence_Update
         {
-            static void Postfix(CardOpeningSequence __instance)
+            static readonly FieldInfo autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", BindingFlags.NonPublic | BindingFlags.Instance);
+            static readonly FieldInfo autoFireKeydownField = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            static void Postfix(CardOpeningSequence __instance, ref bool ___m_IsAutoFire, ref bool ___m_IsAutoFireKeydown)
             {
-                if (!autoOpenCards) return;
-                var autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                autoFireField.SetValue(__instance, true);
+                if (autoOpenCards == 0) return;
+                bool autoOpen = autoOpenCards == 1;
+                autoFireField.SetValue(__instance, autoOpen);
+                autoFireKeydownField.SetValue(__instance, autoOpen);
 
-                var autoFireKeydown = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                autoFireKeydown.SetValue(__instance, true);
-
-                //mls.LogInfo($"{autoFireField} {autoFireKeydown}");
+                if (autoOpenCards == 2) autoOpenCards = 0;
             }
         }
+
+
+            [HarmonyPatch(typeof(CustomerManager), "PlayerFinishOpenCardPack")]
+            [HarmonyPostfix]
+            public static void IsActive_Postfix(CustomerManager __instance)
+            {
+                if (autoOpenCards == 1)
+            {
+                autoOpenCards = 2;
+
+            }
+
+
+            }
+        
 
 
         [HarmonyPatch(typeof(CustomerManager), "GetCustomerExactChangeChance")]
