@@ -101,18 +101,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BinaryExtensions.cs" />
-    <Compile Include="BMPLoader.cs" />
-    <Compile Include="ColorExtensions.cs" />
-    <Compile Include="DDSLoader.cs" />
-    <Compile Include="ImageLoader.cs" />
-    <Compile Include="ImageLoaderHelper.cs" />
-    <Compile Include="ImageUtils.cs" />
-    <Compile Include="MTLLoader.cs" />
-    <Compile Include="OBJLoader.cs" />
-    <Compile Include="OBJLoaderHelper.cs" />
-    <Compile Include="OBJObjectBuilder.cs" />
-    <Compile Include="TGALoader.cs" />
     <Compile Include="TimedEffects.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="ControlClient.cs" />
@@ -133,8 +121,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>echo xcopy /y "F:\CCPack-TCGTradingCardGameSimulator\src\bin\Debug\CrowdControl.dll" "D:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\BepInEx\plugins\CrowdControl"
+</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

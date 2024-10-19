@@ -9,11 +9,11 @@ using System.Reflection;
 using System.Threading;
 using TMPro;
 using UnityEngine;
-using Dummiesman;
 using static UnityEngine.ImageConversion;
 using System.Collections;
 using System.Net;
 using DG.Tweening.Plugins.Core.PathCore;
+using DG.Tweening.Plugins.Core;
 
 
 namespace BepinControl
@@ -31,6 +31,7 @@ namespace BepinControl
 
         private static GameObject breadPrefab;
         private static GameObject milkPrefab;
+        private static GameObject trainPrefab;
 
         // Static flag to ensure assets are loaded only once
         private static bool loaded = false;
@@ -51,6 +52,7 @@ namespace BepinControl
 
             milkPrefab = bundle.LoadAsset<GameObject>("MilkGroup");
             breadPrefab = bundle.LoadAsset<GameObject>("BreadGroup");
+            //trainPrefab = bundle.LoadAsset<GameObject>("Train");
 
             if (milkPrefab == null)
             {
@@ -58,6 +60,11 @@ namespace BepinControl
             }
 
             if (breadPrefab == null)
+            {
+                Debug.LogError("Bread prefab not found in AssetBundle.");
+            }
+
+            if (trainPrefab == null)
             {
                 Debug.LogError("Bread prefab not found in AssetBundle.");
             }
@@ -78,6 +85,20 @@ namespace BepinControl
                 Debug.LogError("Bread prefab not loaded.");
             }
         }
+
+        public void Spawn_Train(Vector3 position, Quaternion rotation)
+        {
+            if (breadPrefab != null)
+            {
+                GameObject trainInstance = UnityEngine.Object.Instantiate(trainPrefab, position, rotation);
+                trainInstance.AddComponent<HypeTrain>();
+            }
+            else
+            {
+                Debug.LogError("train prefab not loaded.");
+            }
+        }
+
 
         // Method to spawn the milk asset
         public void Spawn_Milk(Vector3 position, Quaternion rotation)
@@ -695,6 +716,35 @@ namespace BepinControl
                         CPlayerData.m_IsShopOnceOpen = true;
                     });
                 }
+                else if (enteredText[0] == "renamestore")
+                {
+                    try
+                    {
+                        TutorialManager tutorialManager = UnityEngine.Object.FindObjectOfType<TutorialManager>();
+                        if (tutorialManager == null)
+                        {
+                            TestMod.mls.LogInfo("Failed to find Tutorial Manager..");
+                            return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Shop To Rename? What?");
+                        }
+                        if (tutorialManager.m_ShopRenamer == null)
+                        {
+                            TestMod.mls.LogInfo("Failed to initialize ShopRenamer.");
+                            return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No Shop To Rename? What?");
+                        }
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            CSingleton<InteractionPlayerController>.Instance.EnterUIMode();
+                            CSingleton<InteractionPlayerController>.Instance.EnterLockMoveMode();
+                            tutorialManager.m_ShopRenamer.OnPressGoNextButton();
+                            tutorialManager.m_ShopRenamer.m_SetNameInput.ActivateInputField();
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                        return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Failed to Rename Store");
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -930,7 +980,7 @@ namespace BepinControl
             {
                 try
                 {
-                   itemName = String.Join(" ", codeParts[1], codeParts[2]);
+                    itemName = String.Join(" ", codeParts[1], codeParts[2]);
                     TestMod.mls.LogInfo(itemName);
                     spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));//Fix search Item Pack
 
@@ -981,7 +1031,7 @@ namespace BepinControl
 
                     FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
 
-                    TestMod.autoOpenCards = true;
+                    TestMod.autoOpenCards = 1;
                     if (itemListField != null)
                     {
                         List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
@@ -1027,11 +1077,13 @@ namespace BepinControl
             catch (Exception e)
             {
                 TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
-                TestMod.autoOpenCards = false;
+                TestMod.autoOpenCards = 2;
+
                 status = CrowdResponse.Status.STATUS_RETRY;
             }
 
-            TestMod.autoOpenCards = false;
+            TestMod.autoOpenCards = 2;
+
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 
@@ -1069,6 +1121,7 @@ namespace BepinControl
                     );
 
                     crowdDelegatesInstance.Spawn_Bread(spawnPosition, Quaternion.identity);
+
                 }
             });
 
@@ -1112,6 +1165,78 @@ namespace BepinControl
 
             return new CrowdResponse(req.GetReqID(), status, message);
         }
+
+
+        // Put this in the prefab...
+        public class HypeTrain : MonoBehaviour
+        {
+            private Transform playerTransform;
+            private Transform playerCamera;
+
+            private float moveSpeed = 3.0f;
+            private float despawnTime = 10.0f;
+
+            private Vector3 initialOffset = new Vector3(-14.5f, 0.2f, 6.0f); // Further away by 2 units
+
+            void Start()
+            {
+                // Get the player's transform
+                playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+
+                playerCamera = Camera.main?.transform;
+
+                if (playerCamera == null)
+                {
+                    playerCamera = FindObjectOfType<Camera>()?.transform;
+                    if (playerCamera == null)
+                    {
+                        return;
+                    }
+                }
+
+                transform.position = playerTransform.position + playerCamera.TransformDirection(initialOffset);
+
+                transform.rotation = Quaternion.LookRotation(playerCamera.right);
+
+                Collider collider = GetComponent<Collider>();
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                }
+
+                PlaySound();
+                StartCoroutine(MoveAndDespawn());
+            }
+
+            private void PlaySound()
+            {
+                AudioSource audioSource = GetComponent<AudioSource>();
+                if (audioSource != null)
+                {
+                    audioSource.Play();
+                }
+                
+            }
+
+            private IEnumerator MoveAndDespawn()
+            {
+                float elapsedTime = 0f;
+                Vector3 moveDirection = playerCamera.right; 
+
+                while (elapsedTime < despawnTime)
+                {
+                    transform.position += moveDirection * moveSpeed * Time.deltaTime;
+
+                    elapsedTime += Time.deltaTime;
+                    yield return null;
+                }
+
+                Destroy(gameObject);
+            }
+        }
+
+
+       
 
         public class InteractableObject2 : MonoBehaviour
         {
