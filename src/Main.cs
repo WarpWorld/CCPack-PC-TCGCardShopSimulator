@@ -21,7 +21,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.14.0";
+        private const string modVersion = "1.0.15.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -193,6 +193,8 @@ namespace BepinControl
 
         public static void MakeCustomerSmellyTemporarily(Customer customer, float duration)
         {
+            if (!customer.enabled) return;
+            if (!customer.IsInsideShop()) return;
             customer.SetSmelly();
 
             Timer timer = new Timer(_ => ClearSmellyStatus(customer), null, (int)(duration * 1000), Timeout.Infinite);
@@ -462,6 +464,9 @@ namespace BepinControl
         public class NamePlateController : MonoBehaviour
         {
             private Camera mainCamera;
+            public Transform target;
+            public float distanceThreshold = 4f;
+            private TextMeshPro tmp;
 
             void Start()
             {
@@ -470,18 +475,31 @@ namespace BepinControl
                 if (mainCamera == null)
                 {
                     mainCamera = FindObjectOfType<Camera>();
+                    tmp = GetComponent<TextMeshPro>();
                 }
             }
 
-            void LateUpdate()
+            void Update()
             {
                 if (mainCamera == null) return;
 
-                Vector3 directionToCamera = mainCamera.transform.position - transform.position;
-                directionToCamera.y = 0;
-                Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
-                transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0);
+                float distance = Vector3.Distance(mainCamera.transform.position, target.position);
+
+                if (distance <= distanceThreshold)
+                {
+                    tmp.enabled = true;
+                    Vector3 directionToCamera = mainCamera.transform.position - transform.position;
+                    directionToCamera.y = 0;
+                    Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
+                    transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0);
+
+                }
+                else
+                {
+                    tmp.enabled = false;
+                }
             }
+
         }
 
         public static class CustomerManagerPatches
