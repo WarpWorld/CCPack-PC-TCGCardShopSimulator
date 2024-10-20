@@ -21,7 +21,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.0.14.0";
+        private const string modVersion = "1.0.15.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -168,6 +168,7 @@ namespace BepinControl
             {
                 if (mainCamera == null) return;
 
+
                 Vector3 directionToCamera = mainCamera.transform.position - transform.position;
                 directionToCamera.y = 0;
                 directionToCamera.Normalize();
@@ -193,6 +194,8 @@ namespace BepinControl
 
         public static void MakeCustomerSmellyTemporarily(Customer customer, float duration)
         {
+            if (!customer.enabled) return;
+            if (!customer.IsInsideShop()) return;
             customer.SetSmelly();
 
             Timer timer = new Timer(_ => ClearSmellyStatus(customer), null, (int)(duration * 1000), Timeout.Infinite);
@@ -441,9 +444,9 @@ namespace BepinControl
                 // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
                 // }
                 doneItems = true;
-                }
+            }
 
-                while (ActionQueue.Count > 0)
+            while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();
                 action.Invoke();
@@ -459,30 +462,70 @@ namespace BepinControl
             }
 
         }
+
         public class NamePlateController : MonoBehaviour
         {
             private Camera mainCamera;
+            public Transform target;
+            public float distanceThreshold = 5f;
+            private TextMeshPro tmp;
+            private Customer customer;
 
             void Start()
             {
                 mainCamera = Camera.main;
-
                 if (mainCamera == null)
                 {
                     mainCamera = FindObjectOfType<Camera>();
+                }
+
+                customer = GetComponentInParent<Customer>();
+                if (customer == null)
+                {
+                   // Debug.LogError("Customer component not found on parent!");
+                    return; 
+                }
+
+                // Get the TextMeshPro component from the customer's children
+                tmp = customer.GetComponentInChildren<TextMeshPro>();
+                if (tmp == null)
+                {
+                   // Debug.LogError("TextMeshPro component not found in the customer's children!");
+                    return;
                 }
             }
 
             void LateUpdate()
             {
-                if (mainCamera == null) return;
+                if (!tmp || !customer || !mainCamera) return;
 
-                Vector3 directionToCamera = mainCamera.transform.position - transform.position;
-                directionToCamera.y = 0;
-                Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
-                transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0);
+                float distance = Vector3.Distance(mainCamera.transform.position, customer.transform.position);
+
+                if (distance <= distanceThreshold)
+                {
+                    tmp.enabled = true;
+                    Vector3 directionToCamera = mainCamera.transform.position - transform.position;
+                    directionToCamera.y = 0; 
+                    Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
+                    transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0);
+
+                    if (customer.IsSmelly())
+                    {
+                        tmp.color = new Color(0.0f, 1.0f, 0.0f); // Green if smelly
+                    }
+                    else
+                    {
+                        tmp.color = Color.white; // White if not smelly
+                    }
+                }
+                else
+                {
+                    tmp.enabled = false;
+                }
             }
+
         }
+
 
         public static class CustomerManagerPatches
         {
@@ -504,14 +547,12 @@ namespace BepinControl
 
             private static void AddNamePlateToCustomer(Customer customer)
             {
-
                 if (customer.transform.Find("NamePlate") != null)
                 {
-                    return;
+                    return; // Return if the nameplate already exists
                 }
 
                 string chatterName = NameOverride;
-
 
                 if (string.IsNullOrEmpty(chatterName)) return;
 
@@ -520,16 +561,28 @@ namespace BepinControl
                 namePlate.transform.localPosition = Vector3.up * 1.9f;
 
                 TextMeshPro tmp = namePlate.AddComponent<TextMeshPro>();
+                tmp.enabled = true;
                 tmp.text = $"<b>{chatterName}</b>";
                 tmp.alignment = TextAlignmentOptions.Center;
                 tmp.fontSize = 1;
                 tmp.fontMaterial.EnableKeyword("OUTLINE_ON");
                 tmp.outlineColor = Color.black;
                 tmp.outlineWidth = 0.2f;
-                if (isSmelly) tmp.color = new Color(0.0f, 1.0f, 0.0f);
 
+                // Set color based on the smelly condition
+                if (isSmelly)
+                {
+                    tmp.color = new Color(0.0f, 1.0f, 0.0f); // Green for smelly
+                }
+                else
+                {
+                    tmp.color = Color.white; // White for non-smelly
+                }
+
+                // Attach the NamePlateController component
                 namePlate.AddComponent<NamePlateController>();
             }
+
         }
 
 
@@ -654,19 +707,19 @@ namespace BepinControl
         }
 
 
-            [HarmonyPatch(typeof(CustomerManager), "PlayerFinishOpenCardPack")]
-            [HarmonyPostfix]
-            public static void IsActive_Postfix(CustomerManager __instance)
-            {
-                if (autoOpenCards == 1)
+        [HarmonyPatch(typeof(CustomerManager), "PlayerFinishOpenCardPack")]
+        [HarmonyPostfix]
+        public static void IsActive_Postfix(CustomerManager __instance)
+        {
+            if (autoOpenCards == 1)
             {
                 autoOpenCards = 2;
 
             }
 
 
-            }
-        
+        }
+
 
 
         [HarmonyPatch(typeof(CustomerManager), "GetCustomerExactChangeChance")]
@@ -694,20 +747,20 @@ namespace BepinControl
                 }
                 //if (TestMod.CustomersOverpay)
                 //{
-                    //float badLuck = Random.Range(0.0f, 1.0f);
-                   // float randomChange = Random.Range(0.00f, 0.99f);
+                //float badLuck = Random.Range(0.0f, 1.0f);
+                // float randomChange = Random.Range(0.00f, 0.99f);
 
-                   // if (badLuck < 0.1f)
-                   // {
-                       // __result = __result + Random.Range(1, 100) + 1000 + randomChange;
+                // if (badLuck < 0.1f)
+                // {
+                // __result = __result + Random.Range(1, 100) + 1000 + randomChange;
 
-                  //  }
-                   // else
-                   // {
-                       // __result = __result + Random.Range(1, 100) + randomChange;
-                  //  }
+                //  }
+                // else
+                // {
+                // __result = __result + Random.Range(1, 100) + randomChange;
+                //  }
 
-                    //return false;
+                //return false;
 
                 //}
                 return true;

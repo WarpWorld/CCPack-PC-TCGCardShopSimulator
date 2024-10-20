@@ -205,7 +205,6 @@ namespace BepinControl
                     callFunc(CustomerManager.Instance, "AddCustomerPrefab", null);
                     Customer newCustomer = CM.GetNewCustomer(false);//spawn not smelly
 
-                    TestMod.NameOverride = "";
                     newCustomer.name = req.viewer;
                 });
             }
