@@ -33,6 +33,9 @@ namespace BepinControl
         private static GameObject milkPrefab;
         private static GameObject trainPrefab;
 
+        private static GameObject hypetrainPrefab;
+
+
         // Static flag to ensure assets are loaded only once
         private static bool loaded = false;
 
@@ -52,6 +55,8 @@ namespace BepinControl
 
             milkPrefab = bundle.LoadAsset<GameObject>("MilkGroup");
             breadPrefab = bundle.LoadAsset<GameObject>("BreadGroup");
+
+
             //trainPrefab = bundle.LoadAsset<GameObject>("Train");
 
             if (milkPrefab == null)
@@ -69,7 +74,106 @@ namespace BepinControl
                 Debug.LogError("Bread prefab not found in AssetBundle.");
             }
 
+
+
+            HypeTrainBoxData boxData = new HypeTrainBoxData();// Do this to load the dll... maybe do something different, but this works for now
+            bundle = AssetBundle.LoadFromFile(System.IO.Path.Combine(Paths.PluginPath, "CrowdControl", "warpworld.hypetrain"));
+            if (bundle == null)
+            {
+                Debug.LogError("Failed to load AssetBundle.");
+                return;
+            }
+
+            hypetrainPrefab = bundle.LoadAsset<GameObject>("HypeTrain");
+
+            if (hypetrainPrefab == null)
+            {
+                Debug.LogError("hypetrain prefab not found in AssetBundle.");
+            }
+
             loaded = true; // Mark as loaded after successful loading
+        }
+
+
+        public void Spawn_HypeTrain(Vector3 position, Quaternion rotation, CrowdRequest.SourceDetails sourceDetails)
+        {
+            if (hypetrainPrefab != null)
+            {
+                /*for (int i = 0; i < 32; ++i)
+                {
+                    try
+                    {
+                        Debug.Log($"Layer {i} is: {LayerMask.LayerToName(i)}");
+						for (int j = 0; j < 32; ++j)
+						{
+							try
+							{
+                                if (i != j)
+                                {
+                                    Debug.Log($"Collide with  {LayerMask.LayerToName(j)}: {Physics.GetIgnoreLayerCollision(i, j)}");
+                                }
+							}
+							catch { }
+						}
+					}
+                    catch { }
+                }*/
+
+                HypeTrain hypeTrain = UnityEngine.Object.Instantiate(hypetrainPrefab, position, rotation).GetComponent<HypeTrain>();
+                if (null == hypeTrain)
+                {
+                    Debug.LogError("SAAAAAAAAAAAD");
+                }
+                else
+                {
+                    Vector3 initialStartOffset = new Vector3(-14.5f, 0.2f, 6.0f); // Further away by 2 units
+                    Vector3 initialStopOffset = new Vector3(14.5f, 0.2f, 6.0f); // Further away by 2 units
+
+                    Transform playerCamera = Camera.main?.transform;
+
+                    if (playerCamera == null)
+                    {
+                        playerCamera = UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
+                        if (playerCamera == null)
+                        {
+                            return;
+                        }
+                    }
+
+                    Transform playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+
+                    Vector3 startPos = playerTransform.position + playerCamera.TransformDirection(initialStartOffset);
+                    startPos.y = playerTransform.position.y;
+
+                    Vector3 stopPos = playerTransform.position + playerCamera.TransformDirection(initialStopOffset);
+                    stopPos.y = playerTransform.position.y;
+
+                    List<HypeTrainBoxData> hypeTrainBoxDataList = new List<HypeTrainBoxData>();
+
+
+                    foreach (var contribution in sourceDetails.top_contributions)
+                    {
+                        hypeTrainBoxDataList.Add(new HypeTrainBoxData()
+                        {
+                            name = contribution.user_name, // Use the contributor's name
+                            bit_amount = contribution.type == "bits" ? contribution.total : 0 // Only set bit_amount if the contribution is bits
+                        });
+                    }
+
+                    // Now call StartHypeTrain with the generated hypeTrainBoxDataList
+                    hypeTrain.StartHypeTrain(startPos, stopPos, hypeTrainBoxDataList.ToArray(), playerTransform,
+                    new HypeTrainOptions()
+                    {
+                        train_layer = LayerMask.NameToLayer("Obstacles"),
+                        max_bits_per_car = 50,
+                    });
+
+                }
+            }
+            else
+            {
+                Debug.LogError("train prefab not loaded.");
+            }
         }
 
         // Method to spawn the bread asset
@@ -1087,7 +1191,6 @@ namespace BepinControl
         }
 
 
-
         public static CrowdResponse SpawnBread(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -1119,7 +1222,11 @@ namespace BepinControl
                         playerCamera.position.z + forwardDirection.z * spawnDifference
                     );
 
-                    crowdDelegatesInstance.Spawn_Bread(spawnPosition, Quaternion.identity);
+
+                    TestMod.mls.LogInfo("sd " + req.sourceDetails);
+
+
+                    crowdDelegatesInstance.Spawn_HypeTrain(spawnPosition, Quaternion.identity, req.sourceDetails);
 
                 }
             });
@@ -1128,6 +1235,49 @@ namespace BepinControl
         }
 
         public static CrowdResponse SpawnMilk(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+
+            //TestMod.mls.LogMessage(req.sourceDetails);
+
+
+            Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
+            Vector3 position = pos.position;
+            Quaternion rotation = pos.rotation;
+            Transform playerCamera = Camera.main?.transform ?? UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
+            Vector3 forwardDirection = playerCamera.forward;
+
+            if (!playerCamera) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
+
+
+            TestMod.ActionQueue.Enqueue(() =>
+            {
+
+                CrowdDelegates crowdDelegatesInstance = new CrowdDelegates();
+
+                crowdDelegatesInstance.LoadAssetsFromBundle();
+
+                for (int i = 0; i < 1; i++)
+                {
+                    float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
+                    Vector3 spawnPosition = new Vector3(
+                        playerCamera.position.x + forwardDirection.x * spawnDifference,
+                        playerCamera.position.y + 1.0f,
+                        playerCamera.position.z + forwardDirection.z * spawnDifference
+                    );
+
+                    crowdDelegatesInstance.Spawn_Milk(spawnPosition, Quaternion.identity);
+
+                }
+            });
+
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
+        
+
+        public static CrowdResponse SpawnHypeTrain(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
@@ -1166,74 +1316,7 @@ namespace BepinControl
         }
 
 
-        // Put this in the prefab...
-        public class HypeTrain : MonoBehaviour
-        {
-            private Transform playerTransform;
-            private Transform playerCamera;
-
-            private float moveSpeed = 3.0f;
-            private float despawnTime = 10.0f;
-
-            private Vector3 initialOffset = new Vector3(-14.5f, 0.2f, 6.0f); // Further away by 2 units
-
-            void Start()
-            {
-                // Get the player's transform
-                playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
-
-                playerCamera = Camera.main?.transform;
-
-                if (playerCamera == null)
-                {
-                    playerCamera = FindObjectOfType<Camera>()?.transform;
-                    if (playerCamera == null)
-                    {
-                        return;
-                    }
-                }
-
-                transform.position = playerTransform.position + playerCamera.TransformDirection(initialOffset);
-
-                transform.rotation = Quaternion.LookRotation(playerCamera.right);
-
-                Collider collider = GetComponent<Collider>();
-                if (collider != null)
-                {
-                    collider.enabled = false;
-                }
-
-                PlaySound();
-                StartCoroutine(MoveAndDespawn());
-            }
-
-            private void PlaySound()
-            {
-                AudioSource audioSource = GetComponent<AudioSource>();
-                if (audioSource != null)
-                {
-                    audioSource.Play();
-                }
-                
-            }
-
-            private IEnumerator MoveAndDespawn()
-            {
-                float elapsedTime = 0f;
-                Vector3 moveDirection = playerCamera.right; 
-
-                while (elapsedTime < despawnTime)
-                {
-                    transform.position += moveDirection * moveSpeed * Time.deltaTime;
-
-                    elapsedTime += Time.deltaTime;
-                    yield return null;
-                }
-
-                Destroy(gameObject);
-            }
-        }
-
+      
 
        
 
