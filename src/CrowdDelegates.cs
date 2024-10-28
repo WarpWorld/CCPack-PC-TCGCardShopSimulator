@@ -14,6 +14,9 @@ using System.Collections;
 using System.Net;
 using DG.Tweening.Plugins.Core.PathCore;
 using DG.Tweening.Plugins.Core;
+using System.Security.Cryptography;
+using System.Text;
+using static BepinControl.CrowdRequest.SourceDetails;
 
 
 namespace BepinControl
@@ -56,26 +59,6 @@ namespace BepinControl
             milkPrefab = bundle.LoadAsset<GameObject>("MilkGroup");
             breadPrefab = bundle.LoadAsset<GameObject>("BreadGroup");
 
-
-            //trainPrefab = bundle.LoadAsset<GameObject>("Train");
-
-            if (milkPrefab == null)
-            {
-                Debug.LogError("Milk prefab not found in AssetBundle.");
-            }
-
-            if (breadPrefab == null)
-            {
-                Debug.LogError("Bread prefab not found in AssetBundle.");
-            }
-
-            if (trainPrefab == null)
-            {
-                Debug.LogError("Bread prefab not found in AssetBundle.");
-            }
-
-
-
             HypeTrainBoxData boxData = new HypeTrainBoxData();// Do this to load the dll... maybe do something different, but this works for now
             bundle = AssetBundle.LoadFromFile(System.IO.Path.Combine(Paths.PluginPath, "CrowdControl", "warpworld.hypetrain"));
             if (bundle == null)
@@ -91,9 +74,23 @@ namespace BepinControl
                 Debug.LogError("hypetrain prefab not found in AssetBundle.");
             }
 
-            loaded = true; // Mark as loaded after successful loading
+            loaded = true; 
         }
 
+        public static Color ConvertUserNameToColor(string userName)
+        {
+            
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(userName));
+
+                float r = hashBytes[0] / 255f;
+                float g = hashBytes[1] / 255f;
+                float b = hashBytes[2] / 255f;
+
+                return new Color(r, g, b);
+            }
+        }
 
         public void Spawn_HypeTrain(Vector3 position, Quaternion rotation, CrowdRequest.SourceDetails sourceDetails)
         {
@@ -122,7 +119,7 @@ namespace BepinControl
                 HypeTrain hypeTrain = UnityEngine.Object.Instantiate(hypetrainPrefab, position, rotation).GetComponent<HypeTrain>();
                 if (null == hypeTrain)
                 {
-                    Debug.LogError("SAAAAAAAAAAAD");
+                    Debug.LogError("No Train?");
                 }
                 else
                 {
@@ -150,30 +147,46 @@ namespace BepinControl
 
                     List<HypeTrainBoxData> hypeTrainBoxDataList = new List<HypeTrainBoxData>();
 
-
                     foreach (var contribution in sourceDetails.top_contributions)
                     {
                         hypeTrainBoxDataList.Add(new HypeTrainBoxData()
                         {
-                            name = contribution.user_name, // Use the contributor's name
+                            name = contribution.user_name,
+                            box_color = ConvertUserNameToColor(contribution.user_name),
                             bit_amount = contribution.type == "bits" ? contribution.total : 0 // Only set bit_amount if the contribution is bits
                         });
                     }
+
+                    bool isLastContributionInTop = sourceDetails.top_contributions.Any(contribution => contribution.user_id == sourceDetails.last_contribution.user_id);
+
+                    // Only add last train car if the last_contribution user_id is not in top_contributions
+                    if (!isLastContributionInTop)
+                    {
+                        hypeTrainBoxDataList.Add(new HypeTrainBoxData()
+                        {
+                            name = sourceDetails.last_contribution.user_name,
+                            box_color = ConvertUserNameToColor(sourceDetails.last_contribution.user_name),
+                            bit_amount = sourceDetails.last_contribution.type == "bits" ? sourceDetails.last_contribution.total : 0
+                        });
+                    }
+
+                    float defaultSpeed = 1f;
+                    float speedIncrease = sourceDetails.level * 0.1f;
+                    float distance_per_second = Mathf.Min(defaultSpeed + speedIncrease, 10f);
 
                     // Now call StartHypeTrain with the generated hypeTrainBoxDataList
                     hypeTrain.StartHypeTrain(startPos, stopPos, hypeTrainBoxDataList.ToArray(), playerTransform,
                     new HypeTrainOptions()
                     {
                         train_layer = LayerMask.NameToLayer("Obstacles"),
-                        max_bits_per_car = 50,
+                        max_bits_per_car = 100,
+                        volume = SoundManager.SFXVolume,
+                        distance_per_second = distance_per_second
                     });
 
                 }
             }
-            else
-            {
-                Debug.LogError("train prefab not loaded.");
-            }
+            
         }
 
         // Method to spawn the bread asset
@@ -184,23 +197,7 @@ namespace BepinControl
                 GameObject breadInstance = UnityEngine.Object.Instantiate(breadPrefab, position, rotation);
                 breadInstance.AddComponent<InteractableObject2>();
             }
-            else
-            {
-                Debug.LogError("Bread prefab not loaded.");
-            }
-        }
 
-        public void Spawn_Train(Vector3 position, Quaternion rotation)
-        {
-            if (breadPrefab != null)
-            {
-                GameObject trainInstance = UnityEngine.Object.Instantiate(trainPrefab, position, rotation);
-                trainInstance.AddComponent<HypeTrain>();
-            }
-            else
-            {
-                Debug.LogError("train prefab not loaded.");
-            }
         }
 
 
@@ -217,8 +214,6 @@ namespace BepinControl
                 Debug.LogError("Milk prefab not loaded.");
             }
         }
-
-
 
 
         public static CrowdResponse ToggleLights(ControlClient client, CrowdRequest req)
@@ -1191,7 +1186,7 @@ namespace BepinControl
         }
 
 
-        public static CrowdResponse SpawnBread(ControlClient client, CrowdRequest req)
+        public static CrowdResponse SpawnHypeTrain(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
@@ -1223,9 +1218,6 @@ namespace BepinControl
                     );
 
 
-                    TestMod.mls.LogInfo("sd " + req.sourceDetails);
-
-
                     crowdDelegatesInstance.Spawn_HypeTrain(spawnPosition, Quaternion.identity, req.sourceDetails);
 
                 }
@@ -1234,7 +1226,7 @@ namespace BepinControl
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 
-        public static CrowdResponse SpawnMilk(ControlClient client, CrowdRequest req)
+        public static CrowdResponse SpawnBread(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
@@ -1267,7 +1259,7 @@ namespace BepinControl
                         playerCamera.position.z + forwardDirection.z * spawnDifference
                     );
 
-                    crowdDelegatesInstance.Spawn_Milk(spawnPosition, Quaternion.identity);
+                    crowdDelegatesInstance.Spawn_Bread(spawnPosition, Quaternion.identity);
 
                 }
             });
@@ -1277,7 +1269,7 @@ namespace BepinControl
 
         
 
-        public static CrowdResponse SpawnHypeTrain(ControlClient client, CrowdRequest req)
+        public static CrowdResponse SpawnMilk(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";

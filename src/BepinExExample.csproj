@@ -46,7 +46,8 @@
     <Reference Include="Heathen.Steamworks">
       <HintPath>resources\Heathen.Steamworks.dll</HintPath>
     </Reference>
-    <Reference Include="HypeTrain">
+    <Reference Include="HypeTrain, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>D:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\BepInEx\plugins\CrowdControl\HypeTrain.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -121,6 +122,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="resources\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
