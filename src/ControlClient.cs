@@ -25,7 +25,10 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Policy;
 using System.Threading;
+using static BepinControl.CrowdResponse;
+using static HeathenEngineering.SteamworksIntegration.Currency;
 
 
 namespace BepinControl
@@ -401,6 +404,9 @@ namespace BepinControl
             res.Send(Socket);
         }
 
+
+
+
         private void ClientLoop()
         {
 
@@ -410,6 +416,19 @@ namespace BepinControl
                 TestMod.CreateChatStatusText("Connected to Crowd Control!");
             });
             var timer = new Timer(timeUpdate, null, 0, 150);
+
+
+            var message = new GenericMessage(
+                    type: 16,
+                    internalFlag: false,
+                    eventType: "anything_you_like",
+                    data: new { a_field = 7, anotherField = "urMom" }
+                );
+
+            TestMod.mls.LogInfo("SEND MESSAGE");
+
+            // Send the message
+            message.Send(Socket);
 
             try
             {
@@ -480,6 +499,10 @@ namespace BepinControl
                     TestMod.mls.LogInfo(e.GetType().Name);
                     TestMod.mls.LogInfo("Failed to connect to Crowd Control");
                 }
+
+
+                
+
 
                 Thread.Sleep(10000);
             }
