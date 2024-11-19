@@ -94,6 +94,8 @@ namespace BepinControl
 
         public void Spawn_HypeTrain(Vector3 position, Quaternion rotation, CrowdRequest.SourceDetails sourceDetails)
         {
+
+
             if (hypetrainPrefab != null)
             {
                 /*for (int i = 0; i < 32; ++i)
@@ -115,6 +117,13 @@ namespace BepinControl
 					}
                     catch { }
                 }*/
+
+
+                if (sourceDetails.top_contributions.Length == 0)
+                {
+                    TestMod.mls.LogInfo("No top_contributions?");
+                    return;
+                }
 
                 HypeTrain hypeTrain = UnityEngine.Object.Instantiate(hypetrainPrefab, position, rotation).GetComponent<HypeTrain>();
                 if (null == hypeTrain)
@@ -157,10 +166,10 @@ namespace BepinControl
                         });
                     }
 
-                    bool isLastContributionInTop = sourceDetails.top_contributions.Any(contribution => contribution.user_id == sourceDetails.last_contribution.user_id);
+                    bool isLastContributionInTop = sourceDetails.last_contribution != null;
 
                     // Only add last train car if the last_contribution user_id is not in top_contributions
-                    if (!isLastContributionInTop)
+                    if (isLastContributionInTop)
                     {
                         hypeTrainBoxDataList.Add(new HypeTrainBoxData()
                         {
