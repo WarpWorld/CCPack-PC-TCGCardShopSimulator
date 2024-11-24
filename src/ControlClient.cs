@@ -418,18 +418,6 @@ namespace BepinControl
             var timer = new Timer(timeUpdate, null, 0, 150);
 
 
-            var message = new GenericMessage(
-                    type: 16,
-                    internalFlag: false,
-                    eventType: "anything_you_like",
-                    data: new { a_field = 7, anotherField = "urMom" }
-                );
-
-            TestMod.mls.LogInfo("SEND MESSAGE");
-
-            // Send the message
-            message.Send(Socket);
-
             try
             {
                 while (Running)
