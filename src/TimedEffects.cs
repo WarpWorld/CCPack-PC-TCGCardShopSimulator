@@ -118,7 +118,7 @@ namespace BepinControl
                         {
                             CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
                             org_FOV = (float)CrowdDelegates.getProperty(camera, "m_CurrentFOV");
-                            camera.UpdateFOV(-140f);
+                            camera.UpdateFOV(140f);
                         });
                         break;
                     }
