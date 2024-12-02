@@ -721,7 +721,7 @@ namespace BepinControl
         {
             int dur = 30;
             if (req.duration > 0) dur = req.duration / 1000;
-            if (CSingleton<CollectionBinderUI>.Instance.m_CollectionAlbum.gameObject.activeSelf) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Player is in Binder");
+            
             if (TimedThread.isRunning(TimedType.HIGH_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
             if (TimedThread.isRunning(TimedType.LOW_FOV)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
 
