@@ -530,6 +530,10 @@ namespace BepinControl
             string message = "";
 
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+
+            if (player.m_CurrentGameState == EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, ""); //if player at the register dont teleport
+
+
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
