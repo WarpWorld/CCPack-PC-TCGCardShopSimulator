@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Threading;
 using TMPro;
 using UnityEngine;
-using static UnityEngine.ImageConversion;
 using System.Collections;
 using System.Net;
 using DG.Tweening.Plugins.Core.PathCore;
