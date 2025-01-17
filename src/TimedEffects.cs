@@ -137,7 +137,7 @@ namespace BepinControl
                         TestMod.ActionQueue.Enqueue(() =>
                         {
                             InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                            IPC.m_CameraMouseInput.invertVerticalInput = true;
+                            IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
                         });
                         break;
                     }
@@ -146,7 +146,8 @@ namespace BepinControl
                         TestMod.ActionQueue.Enqueue(() =>
                         {
                             InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                            IPC.m_CameraMouseInput.invertHorizontalInput = true;
+                            IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
+
                         });
                         break;
                     }
@@ -283,7 +284,7 @@ namespace BepinControl
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                                IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
+                                IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
                             });
                             break;
                         }
@@ -292,7 +293,7 @@ namespace BepinControl
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                                IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
+                                IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
                             });
                             break;
                         }
