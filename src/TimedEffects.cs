@@ -169,6 +169,7 @@ namespace BepinControl
                     }
                 case TimedType.OPENING_PACK:
                     {
+                        /*
                         TestMod.ActionQueue.Enqueue(() =>
                         {
                             TestMod.autoOpenPacks = true;
@@ -207,6 +208,7 @@ namespace BepinControl
                                 }
                             }
                         });
+                        */
                         break;
                     }
             }
@@ -324,12 +326,14 @@ namespace BepinControl
                         }
                         case TimedType.OPENING_PACK:
                         {
+                            /*
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 TestMod.autoOpenPacks = false;
                                 CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFire", false);
                                 CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFireKeydown", false);
                             });
+                            */
                             break;
                         }
                 }
