@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Threading;
 using TMPro;
 using UnityEngine;
-using static UnityEngine.ImageConversion;
 using System.Collections;
 using System.Net;
 using DG.Tweening.Plugins.Core.PathCore;
@@ -530,10 +529,6 @@ namespace BepinControl
             string message = "";
 
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
-
-            if (player.m_CurrentGameState == EGameState.CashCounterState) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, ""); //if player at the register dont teleport
-
-
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -1087,6 +1082,12 @@ namespace BepinControl
 
             string[] codeParts = req.code.Split('_');
 
+            // If this is 1, we're currently in the middle of opening packs. So retry it later. 
+            //if (TestMod.autoOpenCards == 1) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+            if (TimedThread.isRunning(TimedType.OPENING_PACK)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+
+
             if (codeParts.Length > 1)
             {
                 try
@@ -1113,7 +1114,6 @@ namespace BepinControl
             InteractionPlayerController interactionPlayerController = CSingleton<InteractionPlayerController>.Instance;
 
 
-
             if (interactionPlayerController.m_CurrentGameState != EGameState.DefaultState)
             {
 
@@ -1126,7 +1126,8 @@ namespace BepinControl
             {
 
 
-                Debug.Log(interactionPlayerController.m_CurrentGameState);
+                //Debug.Log(interactionPlayerController.m_CurrentGameState);
+                new Thread(new TimedThread(req.GetReqID(), TimedType.OPENING_PACK, 6 * 1000).Run).Start();
 
                 TestMod.ActionQueue.Enqueue(() =>
                 {
@@ -1195,7 +1196,7 @@ namespace BepinControl
 
             TestMod.autoOpenCards = 2;
 
-            return new CrowdResponse(req.GetReqID(), status, message);
+            return new TimedResponse(req.GetReqID(), 6 * 1000, CrowdResponse.Status.STATUS_SUCCESS);
         }
 
 
