@@ -1,9 +1,10 @@
+using ConnectorLib.SimpleTCP;
 using CrowdControl.Common;
 using ConnectorType = CrowdControl.Common.ConnectorType;
 
 namespace CrowdControl.Games.Packs.TCGCardShopSimulator;
 
-public class TCGCardShopSimulator : SimpleTCPPack
+public class TCGCardShopSimulator : SimpleTCPPack<SimpleTCPServerConnector>
 {
     public override string Host => "127.0.0.1";
 
@@ -15,7 +16,7 @@ public class TCGCardShopSimulator : SimpleTCPPack
 
     public override Game Game { get; } = new("TCG Card Shop Simulator", "TCGCardShopSimulator", "PC", ConnectorType.SimpleTCPServerConnector);
 
-    public override EffectList Effects => new List<Effect>
+    public override EffectList Effects { get; } = new List<Effect>
     {
         new("Toggle Lights", "lights") { Description = "Toggle the Shop Lights", Category = "Misc", Price = 15 },
         new("Open Store", "open_store") { Description = "Opens the Players Store", Category = "Misc", Price = 100 },

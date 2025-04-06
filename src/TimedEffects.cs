@@ -137,7 +137,7 @@ namespace BepinControl
                         TestMod.ActionQueue.Enqueue(() =>
                         {
                             InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                            IPC.m_CameraMouseInput.invertVerticalInput = true;
+                            IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
                         });
                         break;
                     }
@@ -146,7 +146,8 @@ namespace BepinControl
                         TestMod.ActionQueue.Enqueue(() =>
                         {
                             InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                            IPC.m_CameraMouseInput.invertHorizontalInput = true;
+                            IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
+
                         });
                         break;
                     }
@@ -168,6 +169,7 @@ namespace BepinControl
                     }
                 case TimedType.OPENING_PACK:
                     {
+                        /*
                         TestMod.ActionQueue.Enqueue(() =>
                         {
                             TestMod.autoOpenPacks = true;
@@ -206,6 +208,7 @@ namespace BepinControl
                                 }
                             }
                         });
+                        */
                         break;
                     }
             }
@@ -283,7 +286,7 @@ namespace BepinControl
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                                IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
+                                IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
                             });
                             break;
                         }
@@ -292,7 +295,7 @@ namespace BepinControl
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
-                                IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
+                                IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
                             });
                             break;
                         }
@@ -323,12 +326,14 @@ namespace BepinControl
                         }
                         case TimedType.OPENING_PACK:
                         {
+                            /*
                             TestMod.ActionQueue.Enqueue(() =>
                             {
                                 TestMod.autoOpenPacks = false;
                                 CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFire", false);
                                 CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFireKeydown", false);
                             });
+                            */
                             break;
                         }
                 }
