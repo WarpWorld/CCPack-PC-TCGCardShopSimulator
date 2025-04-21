@@ -426,23 +426,22 @@ namespace BepinControl
 
             if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
             {
-                // foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
-                //{
-                //TestMod.mls.LogInfo("Name: "+cardPack.name+", Amount: "+cardPack.amount);
-
-                //}
-                //foreach (var furniture in InventoryBase.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
-                // {
-                // TestMod.mls.LogInfo(furniture.name);
-                // }
-                //foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-                // {
-                //TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-                //}
-                //  foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-                // {
-                // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-                // }
+                foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
+                {
+                    TestMod.mls.LogInfo("Cardpack Name: "+cardPack.name+", Amount: "+cardPack.amount);
+                }
+                foreach (var furniture in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
+                {
+                    TestMod.mls.LogInfo("Furniture Name: "+furniture.name+", Type: "+furniture.objectType);
+                }
+                foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
+                {
+                    TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+                }
+                foreach (var deco in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_DecoDataList.ToArray())
+                {
+                    TestMod.mls.LogInfo("Decor Name: " + deco.name + ", Type: " + deco.decoType);
+                }
                 doneItems = true;
             }
 

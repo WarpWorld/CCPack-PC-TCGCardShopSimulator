@@ -245,7 +245,6 @@ namespace BepinControl
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 
-
         public static CrowdResponse HeyOhh(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -866,7 +865,7 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
 
-            if (CPlayerData.m_UnlockWarehouseRoomCount == 8 || CPlayerData.m_IsWarehouseRoomUnlocked == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");
+            if (CPlayerData.m_UnlockWarehouseRoomCount < UnlockRoomManager.Instance.m_LockedWarehouseRoomBlockerList.Count || CPlayerData.m_IsWarehouseRoomUnlocked == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");//better fix for Warehouse Room Count
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -887,7 +886,7 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
 
-            if (CPlayerData.m_UnlockRoomCount == 20) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");
+            if (CPlayerData.m_UnlockRoomCount < UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Cannot upgrade Store any more");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
