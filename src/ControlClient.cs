@@ -343,7 +343,21 @@ namespace BepinControl
                 {"spawn_bread", CrowdDelegates.SpawnBread },
                 {"spawn_milk", CrowdDelegates.SpawnMilk },
 
-                {"event-hype-train", CrowdDelegates.SpawnHypeTrain }
+                {"event-hype-train", CrowdDelegates.SpawnHypeTrain },
+                {"send_comic_1", CrowdDelegates.GiveItem },
+                {"send_comic_2", CrowdDelegates.GiveItem },
+                {"send_comic_3", CrowdDelegates.GiveItem },
+                {"send_comic_4", CrowdDelegates.GiveItem },
+                {"send_comic_5", CrowdDelegates.GiveItem },
+                {"send_comic_6", CrowdDelegates.GiveItem },
+                {"send_comic_7", CrowdDelegates.GiveItem },
+                {"send_comic_8", CrowdDelegates.GiveItem },
+                {"send_comic_9", CrowdDelegates.GiveItem },
+                {"send_comic_10", CrowdDelegates.GiveItem },
+                {"send_comic_11", CrowdDelegates.GiveItem },
+                {"send_comic_12", CrowdDelegates.GiveItem },
+                {"send_comic_13", CrowdDelegates.GiveItem },
+                {"send_comic_14", CrowdDelegates.GiveItem }
 
 
             };
