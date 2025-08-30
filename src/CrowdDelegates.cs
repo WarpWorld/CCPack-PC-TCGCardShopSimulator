@@ -747,6 +747,7 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     CPlayerData.m_CoinAmount += amount;
+                    CPlayerData.m_CoinAmountDouble += amount;//they added double at some point?
                     CSingleton<GameUIScreen>.Instance.AddCoin(amount, true);//Set as true to play Anim
                 });
 
@@ -781,6 +782,7 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     CPlayerData.m_CoinAmount -= amount;//this should be negative, silly
+                    CPlayerData.m_CoinAmountDouble -= amount;//they added double at some point?
                     CSingleton<GameUIScreen>.Instance.ReduceCoin(amount, true);//Set as true to play Anim
                 });
 
@@ -865,7 +867,7 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
 
-            if (CPlayerData.m_UnlockWarehouseRoomCount < UnlockRoomManager.Instance.m_LockedWarehouseRoomBlockerList.Count || CPlayerData.m_IsWarehouseRoomUnlocked == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");//better fix for Warehouse Room Count
+            if (CPlayerData.m_UnlockWarehouseRoomCount == UnlockRoomManager.Instance.m_LockedWarehouseRoomBlockerList.Count || CPlayerData.m_IsWarehouseRoomUnlocked == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");//better fix for Warehouse Room Count
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -886,7 +888,7 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
 
-            if (CPlayerData.m_UnlockRoomCount < UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Cannot upgrade Store any more");
+            if (CPlayerData.m_UnlockRoomCount == UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Cannot upgrade Store any more");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -923,7 +925,45 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-
+        public static CrowdResponse GiveDecoItem(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            string message = "";
+            var decoItem = "";
+            ShopDecoData decoDummy = null;
+            int DecoItem3 = 0;
+            string[] enteredText = req.code.Split('_');
+            if (enteredText.Length > 0 )
+            {
+                try
+                {
+                    decoItem = string.Join(" ", enteredText[1], enteredText[2]);
+                    decoDummy = InventoryBase.Instance.m_ObjectData_SO.m_FloorDecoDataList.Find(x => x.ToString().ToLower() == decoItem.ToLower());
+                        if (decoDummy != null)
+                    {
+                        DecoItem3 = InventoryBase.Instance.m_ObjectData_SO.m_FloorDecoDataList.IndexOf(decoDummy);
+                    }
+                }
+                catch
+                {
+                    TestMod.mls.LogInfo("Failed to Resolve Item Name");
+                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Couldn't locate Item");
+                }
+            }
+                try
+                {
+                    TestMod.ActionQueue.Enqueue(() =>
+                    {
+                    CSingleton<ShopBuyDecoUIScreen>.Instance.OnPressBuyShopDeco(DecoItem3, 0);
+                    });
+                }
+                catch (Exception e)
+                {
+                    TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                    status = CrowdResponse.Status.STATUS_RETRY;
+                } 
+            return new CrowdResponse(req.GetReqID(), status, message);
+        }
 
         public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
