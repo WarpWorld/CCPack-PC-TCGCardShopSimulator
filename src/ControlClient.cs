@@ -357,7 +357,10 @@ namespace BepinControl
                 {"send_comic_11", CrowdDelegates.GiveItem },
                 {"send_comic_12", CrowdDelegates.GiveItem },
                 {"send_comic_13", CrowdDelegates.GiveItem },
-                {"send_comic_14", CrowdDelegates.GiveItem }
+                {"send_comic_14", CrowdDelegates.GiveItem },
+
+
+                {"send_tiles_square", CrowdDelegates.GiveDecoItem }
 
 
             };

@@ -10,7 +10,7 @@ public class TCGCardShopSimulator : SimpleTCPPack<SimpleTCPServerConnector>
 
     public override ushort Port => 51337;
 
-    public override ISimpleTCPPack.MessageFormat MessageFormat => ISimpleTCPPack.MessageFormat.CrowdControlLegacy;
+    public override ISimpleTCPPack.MessageFormatType MessageFormat => ISimpleTCPPack.MessageFormatType.CrowdControlLegacy;
 
     public TCGCardShopSimulator(UserRecord player, Func<CrowdControlBlock, bool> responseHandler, Action<object> statusUpdateHandler) : base(player, responseHandler, statusUpdateHandler) { }
 
@@ -310,7 +310,6 @@ public class TCGCardShopSimulator : SimpleTCPPack<SimpleTCPServerConnector>
 
 
         new("Send Comic Set 1", "send_comic_1"){ Description = "Sends a set of Comic Book 1", Category = "Items", Price=50},
-        new("Send Comic Set 1", "send_comic_1"){ Description = "Sends a set of Comic Book 1", Category = "Items", Price=50},
         new("Send Comic Set 2", "send_comic_2"){ Description = "Sends a set of Comic Book 2", Category = "Items", Price=50},
         new("Send Comic Set 3", "send_comic_3"){ Description = "Sends a set of Comic Book 3", Category = "Items", Price=50},
         new("Send Comic Set 4", "send_comic_4"){ Description = "Sends a set of Comic Book 4", Category = "Items", Price=50},
@@ -324,6 +323,7 @@ public class TCGCardShopSimulator : SimpleTCPPack<SimpleTCPServerConnector>
         new("Send Comic Set 12", "send_comic_12"){ Description = "Sends a set of Comic Book 12", Category = "Items", Price=50},
         new("Send Comic Set 13", "send_comic_13"){ Description = "Sends a set of Comic Book 13", Category = "Items", Price=50},
         new("Send Comic Set 14", "send_comic_14"){ Description = "Sends a set of Comic Book 14", Category = "Items", Price=50},
+        new("Send Plant 4", "send_tiles_square"){ Description = "Sends a Plant 4 Decor Item", Category = "Decor", Price=50},
 
     };
 }
