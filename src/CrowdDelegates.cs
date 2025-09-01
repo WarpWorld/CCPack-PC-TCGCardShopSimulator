@@ -377,7 +377,7 @@ namespace BepinControl
             {
                 try
                 {
-                    Worker worker2 = m_WorkerList.Find(x => x.m_IsActive == false);
+                    Worker worker2 = m_WorkerList.Find(x => !x.m_IsActive);
                     workerCount = m_WorkerList.IndexOf(worker2);
                     if (worker2 != null)
                     {
@@ -398,14 +398,12 @@ namespace BepinControl
                 {
                     TestMod.ActionQueue.Enqueue(() =>
                     {
-
-                        workerid.ActivateWorker(true);
+                        WorkerManager.Instance.ActivateWorker(workerCount,true);
                         workerid.m_IsActive = true;
                         //workerid.name = req.viewer; worker tags
                         workerid.gameObject.SetActive(true);
                         workerid.transform.position = InteractionPlayerController.Instance.m_WalkerCtrl.transform.position;
                         CPlayerData.SetIsWorkerHired(workerCount, true);
-
                     });
                 }
                 catch (Exception e)
@@ -925,45 +923,6 @@ namespace BepinControl
             }
             return new CrowdResponse(req.GetReqID(), status, message);
         }
-        public static CrowdResponse GiveDecoItem(ControlClient client, CrowdRequest req)
-        {
-            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
-            string message = "";
-            var decoItem = "";
-            ShopDecoData decoDummy = null;
-            int DecoItem3 = 0;
-            string[] enteredText = req.code.Split('_');
-            if (enteredText.Length > 0 )
-            {
-                try
-                {
-                    decoItem = string.Join(" ", enteredText[1], enteredText[2]);
-                    decoDummy = InventoryBase.Instance.m_ObjectData_SO.m_FloorDecoDataList.Find(x => x.ToString().ToLower() == decoItem.ToLower());
-                        if (decoDummy != null)
-                    {
-                        DecoItem3 = InventoryBase.Instance.m_ObjectData_SO.m_FloorDecoDataList.IndexOf(decoDummy);
-                    }
-                }
-                catch
-                {
-                    TestMod.mls.LogInfo("Failed to Resolve Item Name");
-                    return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Couldn't locate Item");
-                }
-            }
-                try
-                {
-                    TestMod.ActionQueue.Enqueue(() =>
-                    {
-                    CSingleton<ShopBuyDecoUIScreen>.Instance.OnPressBuyShopDeco(DecoItem3, 0);
-                    });
-                }
-                catch (Exception e)
-                {
-                    TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
-                    status = CrowdResponse.Status.STATUS_RETRY;
-                } 
-            return new CrowdResponse(req.GetReqID(), status, message);
-        }
 
         public static CrowdResponse GiveItem(ControlClient client, CrowdRequest req) //https://pastebin.com/BVEACvGA item list
         {
@@ -991,8 +950,7 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
-                    else RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
+                    RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
                 });
             }
             catch (Exception e)
@@ -1696,7 +1654,7 @@ namespace BepinControl
 
 
                         InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
-                        interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, 64);
+                        interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, item2.amount);
                         interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
 
                     }

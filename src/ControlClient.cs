@@ -319,6 +319,9 @@ namespace BepinControl
                 {"furniture_huge_personal_shelf", CrowdDelegates.GiveItemFurniture },
                 {"furniture_auto_scent_t1000", CrowdDelegates.GiveItemFurniture},
                 {"furniture_big_card_display", CrowdDelegates.GiveItemFurniture },
+                {"furniture_pack_machine_s", CrowdDelegates.GiveItemFurniture },
+                {"furniture_pack_machine_m", CrowdDelegates.GiveItemFurniture },
+                {"furniture_pack_machine_l", CrowdDelegates.GiveItemFurniture },
 
                 {"give_necromansters", CrowdDelegates.GiveItem},
                 {"giveatplayer_necromansters", CrowdDelegates.GiveItemAtPlayer },
@@ -359,8 +362,6 @@ namespace BepinControl
                 {"send_comic_13", CrowdDelegates.GiveItem },
                 {"send_comic_14", CrowdDelegates.GiveItem },
 
-
-                {"send_tiles_square", CrowdDelegates.GiveDecoItem }
 
 
             };
