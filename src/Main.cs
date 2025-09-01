@@ -22,7 +22,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.1.8.0";
+        private const string modVersion = "1.0.13";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -424,7 +424,7 @@ namespace BepinControl
 
             }
 
-
+            /*
             if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
             {
                 foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
@@ -439,27 +439,9 @@ namespace BepinControl
                // {
                   //  TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
                // }
-                //string[] decoLists = new string[5]{"CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_WallDecoDataList", "CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FloorDecoDataList", "CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_CeilingDecoDataList", "CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_PosterDecoList", "CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_OtherDecoList" };
-                //lets print DecorItems
-                foreach(var wallDeco in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_WallDecoDataList.ToArray())
-                {
-                    TestMod.mls.LogInfo("Name: " + wallDeco.name + ", Decor Type: Wall");
-                }
-                foreach (var floorDeco in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FloorDecoDataList.ToArray())
-                {
-                    TestMod.mls.LogInfo("Name: " + floorDeco.name + ", Decor Type: Floor");
-                }
-                foreach (var ceilingDeco in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_CeilingDecoDataList)
-                {
-                    TestMod.mls.LogInfo("Name: " + ceilingDeco.name + ", Decor Type: Ceiling");
-                }
-                foreach (var PosterDeco in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_WallDecoDataList)
-                {
-                    TestMod.mls.LogInfo("Name: " + PosterDeco.name + ", Decor Type: Poster");
-                }
                 doneItems = true;
             }
-
+            */
             while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();
@@ -570,7 +552,6 @@ namespace BepinControl
                 return true;
             }
         }
-
 
         public static class CustomerManagerPatches
         {
