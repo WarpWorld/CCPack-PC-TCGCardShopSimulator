@@ -12,6 +12,7 @@ using System.Linq;
 using UnityEngine.EventSystems;
 using Random = UnityEngine.Random;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace BepinControl
 {
@@ -21,7 +22,9 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.1.7.0";
+
+        private const string modVersion = "1.1.8.0";
+
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -423,29 +426,24 @@ namespace BepinControl
 
             }
 
-
+            /*
             if (CGameManager.Instance.m_IsGameLevel && !doneItems)//lets print all card arrays in the restock data, so we can use them
             {
-                // foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
-                //{
-                //TestMod.mls.LogInfo("Name: "+cardPack.name+", Amount: "+cardPack.amount);
-
-                //}
-                //foreach (var furniture in InventoryBase.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
-                // {
-                // TestMod.mls.LogInfo(furniture.name);
-                // }
+                foreach (var cardPack in InventoryBase.Instance.m_StockItemData_SO.m_RestockDataList.ToArray())
+                {
+                    TestMod.mls.LogInfo("Cardpack Name: " + cardPack.name + ", Amount: " + cardPack.amount);
+                }
+                foreach (var furniture in CSingleton<InventoryBase>.Instance.m_ObjectData_SO.m_FurniturePurchaseDataList.ToArray())//And the furniture!
+                {
+                    TestMod.mls.LogInfo("Furniture Name: " + furniture.name + ", Type: " + furniture.objectType);
+                }
                 //foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-                // {
-                //TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-                //}
-                //  foreach (var obj in InventoryBase.Instance.m_ObjectData_SO.m_ObjectDataList.ToArray())//And the furniture!
-                // {
-                // TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
-                // }
+               // {
+                  //  TestMod.mls.LogInfo("Name: " + obj.name + " : Type: " + obj.objectType);
+               // }
                 doneItems = true;
             }
-
+            */
             while (ActionQueue.Count > 0)
             {
                 Action action = ActionQueue.Dequeue();

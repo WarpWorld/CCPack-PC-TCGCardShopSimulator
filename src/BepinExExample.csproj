@@ -34,8 +34,9 @@
     <Reference Include="0Harmony">
       <HintPath>resources\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>resources\Assembly-CSharp.dll</HintPath>
+    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\Card Shop Simulator_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>resources\BepInEx.dll</HintPath>
@@ -48,7 +49,7 @@
     </Reference>
     <Reference Include="HypeTrain, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>D:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\BepInEx\plugins\CrowdControl\HypeTrain.dll</HintPath>
+      <HintPath>resources\HypeTrain.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -74,7 +75,7 @@
       <HintPath>resources\UnityEngine.AIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>F:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\Card Shop Simulator_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>G:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\Card Shop Simulator_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
       <HintPath>D:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\Card Shop Simulator_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
@@ -86,7 +87,7 @@
       <HintPath>resources\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>F:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\Card Shop Simulator_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>G:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\Card Shop Simulator_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
       <HintPath>resources\UnityEngine.IMGUIModule.dll</HintPath>
@@ -128,8 +129,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy /y "F:\CCPack-TCGTradingCardGameSimulator\src\bin\Debug\CrowdControl.dll" "D:\SteamLibrary\steamapps\common\TCG Card Shop Simulator\BepInEx\plugins\CrowdControl"
-</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>
