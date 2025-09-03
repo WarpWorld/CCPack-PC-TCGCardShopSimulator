@@ -23,7 +23,7 @@ namespace BepinControl
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
 
-        private const string modVersion = "1.1.7.0";
+        private const string modVersion = "1.1.8.0";
 
 
         private readonly Harmony harmony = new Harmony(modGUID);
