@@ -245,7 +245,6 @@ namespace BepinControl
             return new CrowdResponse(req.GetReqID(), status, message);
         }
 
-
         public static CrowdResponse HeyOhh(ControlClient client, CrowdRequest req)
         {
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
@@ -378,7 +377,7 @@ namespace BepinControl
             {
                 try
                 {
-                    Worker worker2 = m_WorkerList.Find(x => x.m_IsActive == false);
+                    Worker worker2 = m_WorkerList.Find(x => !x.m_IsActive);
                     workerCount = m_WorkerList.IndexOf(worker2);
                     if (worker2 != null)
                     {
@@ -399,14 +398,12 @@ namespace BepinControl
                 {
                     TestMod.ActionQueue.Enqueue(() =>
                     {
-
-                        workerid.ActivateWorker(true);
+                        WorkerManager.Instance.ActivateWorker(workerCount,true);
                         workerid.m_IsActive = true;
                         //workerid.name = req.viewer; worker tags
                         workerid.gameObject.SetActive(true);
                         workerid.transform.position = InteractionPlayerController.Instance.m_WalkerCtrl.transform.position;
                         CPlayerData.SetIsWorkerHired(workerCount, true);
-
                     });
                 }
                 catch (Exception e)
@@ -748,6 +745,7 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     CPlayerData.m_CoinAmount += amount;
+                    CPlayerData.m_CoinAmountDouble += amount;//they added double at some point?
                     CSingleton<GameUIScreen>.Instance.AddCoin(amount, true);//Set as true to play Anim
                 });
 
@@ -782,6 +780,7 @@ namespace BepinControl
                 TestMod.ActionQueue.Enqueue(() =>
                 {
                     CPlayerData.m_CoinAmount -= amount;//this should be negative, silly
+                    CPlayerData.m_CoinAmountDouble -= amount;//they added double at some point?
                     CSingleton<GameUIScreen>.Instance.ReduceCoin(amount, true);//Set as true to play Anim
                 });
 
@@ -866,7 +865,7 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
 
-            if (CPlayerData.m_UnlockWarehouseRoomCount == 8 || CPlayerData.m_IsWarehouseRoomUnlocked == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");
+            if (CPlayerData.m_UnlockWarehouseRoomCount == UnlockRoomManager.Instance.m_LockedWarehouseRoomBlockerList.Count || CPlayerData.m_IsWarehouseRoomUnlocked == false) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");//better fix for Warehouse Room Count
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -887,7 +886,7 @@ namespace BepinControl
             CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
             string message = "";
 
-            if (CPlayerData.m_UnlockRoomCount == 20) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Storage is already unlocked.");
+            if (CPlayerData.m_UnlockRoomCount == UnlockRoomManager.Instance.m_LockedRoomBlockerList.Count) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "Cannot upgrade Store any more");
             try
             {
                 TestMod.ActionQueue.Enqueue(() =>
@@ -951,8 +950,7 @@ namespace BepinControl
             {
                 TestMod.ActionQueue.Enqueue(() =>
                 {
-                    if (item2.isBigBox) RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
-                    else RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
+                    RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
                 });
             }
             catch (Exception e)
@@ -1656,7 +1654,7 @@ namespace BepinControl
 
 
                         InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
-                        interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, 64);
+                        interactablePackagingBox_Item.FillBoxWithItem(item2.itemType, item2.amount);
                         interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
 
                     }
