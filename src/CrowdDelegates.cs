@@ -1134,51 +1134,40 @@ namespace BepinControl
                     Vector3 position = pos.position;
                     Quaternion rotation = pos.rotation;
 
-
-                    InteractablePackagingBox_Item interactablePackagingBox_Item = UnityEngine.Object.Instantiate<InteractablePackagingBox_Item>(CSingleton<RestockManager>.Instance.m_PackageBoxPrefab, new Vector3(position.x + 1.4f, position.y + 1.2f, position.z), rotation, CSingleton<RestockManager>.Instance.m_PackageBoxParentGrp);
-                    interactablePackagingBox_Item.FillBoxWithItem(spawnItem.itemType, 1);
-                    interactablePackagingBox_Item.name = interactablePackagingBox_Item.m_ObjectType.ToString() + getProperty(CSingleton<RestockManager>.Instance, "m_SpawnedBoxCount");
-
-                    FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
+                    // Spawn the Item directly without using a box
+                    // Get ItemMeshData for the card pack type
+                    ItemMeshData itemMeshData = InventoryBase.GetItemMeshData(spawnItem.itemType);
+                    
+                    // Create a temporary parent GameObject for the item
+                    GameObject tempParent = new GameObject("TempCardPackParent");
+                    tempParent.transform.position = new Vector3(position.x + 1.4f, position.y + 1.2f, position.z);
+                    tempParent.transform.rotation = rotation;
+                    
+                    // Get an Item from the ItemSpawnManager
+                    Item cardPackItem = ItemSpawnManager.GetItem(tempParent.transform);
+                    
+                    // Configure the Item with the mesh data
+                    cardPackItem.SetMesh(
+                        itemMeshData.mesh, 
+                        itemMeshData.material, 
+                        spawnItem.itemType, 
+                        itemMeshData.meshSecondary, 
+                        itemMeshData.materialSecondary, 
+                        itemMeshData.materialList
+                    );
+                    
+                    // Set position and rotation (local to parent, which is already set correctly)
+                    cardPackItem.transform.localPosition = Vector3.zero;
+                    cardPackItem.transform.localRotation = Quaternion.identity;
+                    cardPackItem.transform.localScale = Vector3.one;
+                    
+                    // Activate the item
+                    cardPackItem.gameObject.SetActive(true);
 
                     TestMod.autoOpenCards = 1;
-                    if (itemListField != null)
-                    {
-                        List<Item> spawnedItems = (List<Item>)itemListField.GetValue(CSingleton<ItemSpawnManager>.Instance);
-
-                        if (spawnedItems != null)
-                        {
-                            Transform playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
-
-                            Item closestItem = null;
-                            float shortestDistance = float.MaxValue;
-
-                            foreach (Item _item in spawnedItems)
-                            {
-                                if (_item.GetItemType() == spawnItem.itemType)
-                                {
-                                    float distanceToPlayer = Vector3.Distance(playerTransform.position, _item.transform.position);
-
-                                    if (distanceToPlayer < shortestDistance)
-                                    {
-                                        shortestDistance = distanceToPlayer;
-                                        closestItem = _item;
-                                    }
-                                }
-                            }
-
-                            if (closestItem != null)
-                            {
-                                CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(closestItem);
-                                interactablePackagingBox_Item.OnDestroyed();
-                            }
-                            else
-                            {
-                                status = CrowdResponse.Status.STATUS_FAILURE;
-                                message = "Unable to activate pack opening.";
-                            }
-                        }
-                    }
+                    
+                    // Now directly call ReadyingCardPack with the spawned item
+                    CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(cardPackItem);
 
                 });
 
