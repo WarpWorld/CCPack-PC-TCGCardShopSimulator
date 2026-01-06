@@ -22,9 +22,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-
-        private const string modVersion = "1.1.8.0";
-
+        private const string modVersion = "1.1.10";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -480,15 +478,15 @@ namespace BepinControl
                 customer = GetComponentInParent<Customer>();
                 if (customer == null)
                 {
-                   // Debug.LogError("Customer component not found on parent!");
-                    return; 
+                    // Debug.LogError("Customer component not found on parent!");
+                    return;
                 }
 
                 // Get the TextMeshPro component from the customer's children
                 tmp = customer.GetComponentInChildren<TextMeshPro>();
                 if (tmp == null)
                 {
-                   // Debug.LogError("TextMeshPro component not found in the customer's children!");
+                    // Debug.LogError("TextMeshPro component not found in the customer's children!");
                     return;
                 }
             }
@@ -503,7 +501,7 @@ namespace BepinControl
                 {
                     tmp.enabled = true;
                     Vector3 directionToCamera = mainCamera.transform.position - transform.position;
-                    directionToCamera.y = 0; 
+                    directionToCamera.y = 0;
                     Quaternion lookRotation = Quaternion.LookRotation(directionToCamera);
                     transform.rotation = lookRotation * Quaternion.Euler(0, 180, 0);
 
@@ -554,7 +552,6 @@ namespace BepinControl
                 return true;
             }
         }
-
 
         public static class CustomerManagerPatches
         {
@@ -767,7 +764,7 @@ namespace BepinControl
         [HarmonyPatch(typeof(Customer), "GetRandomPayAmount")]
         public static class HarmonyPatch_Customer_GetRandomPayAmount
         {
-            private static bool Prefix(float limit, ref float __result)
+            private static bool Prefix(double limit, ref double __result)
             {
                 if (TestMod.ExactChange)
                 {
