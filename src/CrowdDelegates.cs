@@ -28,6 +28,11 @@ namespace BepinControl
     {
         public static System.Random rnd = new System.Random();
         public static int maxBoxCount = 100;
+        private const string FoodBundleName = "food";
+        private const string FoodBundleMilkAssetName = "MilkGroup";
+        private const string FoodBundleBreadAssetName = "BreadGroup";
+        private const string HypeTrainBundleName = "warpworld.hypetrain";
+        private const string HypeTrainAssetName = "HypeTrain";
 
         public AssetBundle bundle; // Make sure this is assigned when the plugin loads
 
@@ -41,39 +46,150 @@ namespace BepinControl
         // Static flag to ensure assets are loaded only once
         private static bool loaded = false;
 
+        private static void LogInfo(string message)
+        {
+            TestMod.mls?.LogInfo("[CrowdDelegates] " + message);
+        }
+
+        private static void LogWarning(string message)
+        {
+            TestMod.mls?.LogWarning("[CrowdDelegates] " + message);
+        }
+
+        private static void LogError(string message)
+        {
+            TestMod.mls?.LogError("[CrowdDelegates] " + message);
+        }
+
+        private static string DescribePrefab(GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                return "null prefab";
+            }
+
+            int colliderCount = prefab.GetComponentsInChildren<Collider>(true).Length;
+            int rigidbodyCount = prefab.GetComponentsInChildren<Rigidbody>(true).Length;
+            int rendererCount = prefab.GetComponentsInChildren<Renderer>(true).Length;
+            int audioSourceCount = prefab.GetComponentsInChildren<AudioSource>(true).Length;
+
+            return $"{prefab.name} | children={prefab.transform.childCount}, colliders={colliderCount}, rigidbodies={rigidbodyCount}, renderers={rendererCount}, audioSources={audioSourceCount}";
+        }
+
+        private static void ValidateFoodPrefab(string label, GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                LogError($"{label} prefab is null after bundle load.");
+                return;
+            }
+
+            Collider[] colliders = prefab.GetComponentsInChildren<Collider>(true);
+            Rigidbody[] rigidbodies = prefab.GetComponentsInChildren<Rigidbody>(true);
+
+            LogInfo($"{label} prefab loaded: {DescribePrefab(prefab)}");
+
+            if (colliders.Length == 0)
+            {
+                LogWarning($"{label} prefab has no colliders. Mouse pickup raycasts will never hit it.");
+            }
+
+            if (rigidbodies.Length == 0)
+            {
+                LogWarning($"{label} prefab has no rigidbody. Current pickup code expects RaycastHit.rigidbody.");
+            }
+
+            if (prefab.transform.childCount == 0)
+            {
+                LogWarning($"{label} prefab has no child transforms. Hold/eat animation code currently expects child index 0.");
+            }
+        }
+
+        private static void ValidateSpawnedFoodInstance(string label, GameObject instance)
+        {
+            if (instance == null)
+            {
+                LogError($"{label} instance is null right after instantiate.");
+                return;
+            }
+
+            Collider[] colliders = instance.GetComponentsInChildren<Collider>(true);
+            Rigidbody[] rigidbodies = instance.GetComponentsInChildren<Rigidbody>(true);
+            AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(true);
+
+            LogInfo($"{label} spawned at {instance.transform.position}: {DescribePrefab(instance)}");
+
+            if (colliders.Length == 0)
+            {
+                LogWarning($"{label} instance has no colliders.");
+            }
+
+            if (rigidbodies.Length == 0)
+            {
+                LogWarning($"{label} instance has no rigidbody; pickup will likely fail.");
+            }
+
+            if (audioSources.Length == 0)
+            {
+                LogWarning($"{label} instance has no AudioSource. Eat SFX will be skipped.");
+            }
+        }
+
         // Load all assets from the bundle and store them
         public void LoadAssetsFromBundle()
         {
-            if (loaded) return; // Only load once
-
-            //TestMod.mls.LogDebug("PATH " + System.IO.Path.Combine(Paths.PluginPath, "CrowdControl", "food"));
-
-            bundle = AssetBundle.LoadFromFile(System.IO.Path.Combine(Paths.PluginPath, "CrowdControl", "food"));
-            if (bundle == null)
+            if (loaded && breadPrefab != null && milkPrefab != null && hypetrainPrefab != null)
             {
-                Debug.LogError("Failed to load AssetBundle.");
                 return;
             }
 
-            milkPrefab = bundle.LoadAsset<GameObject>("MilkGroup");
-            breadPrefab = bundle.LoadAsset<GameObject>("BreadGroup");
+            if (loaded)
+            {
+                LogWarning("Asset load was previously marked complete, but one or more cached prefabs are missing. Re-loading bundles.");
+                loaded = false;
+            }
+
+            string pluginFolder = System.IO.Path.Combine(Paths.PluginPath, "CrowdControl");
+            string foodBundlePath = System.IO.Path.Combine(pluginFolder, FoodBundleName);
+            string hypeTrainBundlePath = System.IO.Path.Combine(pluginFolder, HypeTrainBundleName);
+
+            LogInfo($"Loading food bundle from '{foodBundlePath}' (exists={File.Exists(foodBundlePath)})");
+            bundle = AssetBundle.LoadFromFile(foodBundlePath);
+            if (bundle == null)
+            {
+                LogError($"Failed to load food AssetBundle from '{foodBundlePath}'.");
+                return;
+            }
+
+            LogInfo($"Loaded food bundle '{bundle.name}' with {bundle.GetAllAssetNames().Length} assets.");
+
+            milkPrefab = bundle.LoadAsset<GameObject>(FoodBundleMilkAssetName);
+            breadPrefab = bundle.LoadAsset<GameObject>(FoodBundleBreadAssetName);
+            ValidateFoodPrefab("Milk", milkPrefab);
+            ValidateFoodPrefab("Bread", breadPrefab);
 
             HypeTrainBoxData boxData = new HypeTrainBoxData();// Do this to load the dll... maybe do something different, but this works for now
-            bundle = AssetBundle.LoadFromFile(System.IO.Path.Combine(Paths.PluginPath, "CrowdControl", "warpworld.hypetrain"));
+            LogInfo($"Loading HypeTrain bundle from '{hypeTrainBundlePath}' (exists={File.Exists(hypeTrainBundlePath)})");
+            bundle = AssetBundle.LoadFromFile(hypeTrainBundlePath);
             if (bundle == null)
             {
-                Debug.LogError("Failed to load AssetBundle.");
+                LogError($"Failed to load HypeTrain AssetBundle from '{hypeTrainBundlePath}'.");
                 return;
             }
 
-            hypetrainPrefab = bundle.LoadAsset<GameObject>("HypeTrain");
+            hypetrainPrefab = bundle.LoadAsset<GameObject>(HypeTrainAssetName);
 
             if (hypetrainPrefab == null)
             {
-                Debug.LogError("hypetrain prefab not found in AssetBundle.");
+                LogError("HypeTrain prefab not found in AssetBundle.");
+            }
+            else
+            {
+                LogInfo($"HypeTrain prefab loaded: {DescribePrefab(hypetrainPrefab)}");
             }
 
             loaded = true; 
+            LogInfo("Asset bundle load completed.");
         }
 
         public static Color ConvertUserNameToColor(string userName)
@@ -200,27 +316,42 @@ namespace BepinControl
         // Method to spawn the bread asset
         public void Spawn_Bread(Vector3 position, Quaternion rotation)
         {
-            if (breadPrefab != null)
+            if (breadPrefab == null)
             {
-                GameObject breadInstance = UnityEngine.Object.Instantiate(breadPrefab, position, rotation);
-                breadInstance.AddComponent<InteractableObject2>();
+                LogError($"Bread prefab not loaded. Spawn request at {position} cannot continue.");
+                return;
             }
 
+            GameObject breadInstance = UnityEngine.Object.Instantiate(breadPrefab, position, rotation);
+            InteractableObject2 interactableObject = breadInstance.GetComponent<InteractableObject2>();
+            if (interactableObject == null)
+            {
+                interactableObject = breadInstance.AddComponent<InteractableObject2>();
+            }
+
+            interactableObject.SetDebugLabel("Bread");
+            ValidateSpawnedFoodInstance("Bread", breadInstance);
         }
 
 
         // Method to spawn the milk asset
         public void Spawn_Milk(Vector3 position, Quaternion rotation)
         {
-            if (milkPrefab != null)
+            if (milkPrefab == null)
             {
-                GameObject milkInstance = UnityEngine.Object.Instantiate(milkPrefab, position, rotation);
-                milkInstance.AddComponent<InteractableObject2>();
+                LogError($"Milk prefab not loaded. Spawn request at {position} cannot continue.");
+                return;
             }
-            else
+
+            GameObject milkInstance = UnityEngine.Object.Instantiate(milkPrefab, position, rotation);
+            InteractableObject2 interactableObject = milkInstance.GetComponent<InteractableObject2>();
+            if (interactableObject == null)
             {
-                Debug.LogError("Milk prefab not loaded.");
+                interactableObject = milkInstance.AddComponent<InteractableObject2>();
             }
+
+            interactableObject.SetDebugLabel("Milk");
+            ValidateSpawnedFoodInstance("Milk", milkInstance);
         }
 
 
@@ -1238,10 +1369,25 @@ namespace BepinControl
             Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
             Vector3 position = pos.position;
             Quaternion rotation = pos.rotation;
-            Transform playerCamera = Camera.main?.transform ?? UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
-            Vector3 forwardDirection = playerCamera.forward;
+            Transform playerCamera = CSingleton<InteractionPlayerController>.Instance.m_CameraController?.transform
+                ?? CSingleton<InteractionPlayerController>.Instance.m_Cam?.transform
+                ?? Camera.main?.transform
+                ?? UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
+            if (!playerCamera)
+            {
+                LogError("SpawnBread failed: player camera was not found.");
+                return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
+            }
 
-            if (!playerCamera) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
+            Vector3 forwardDirection = playerCamera.forward;
+            forwardDirection.y = 0f;
+            if (forwardDirection.sqrMagnitude < 0.001f)
+            {
+                forwardDirection = pos.forward;
+                forwardDirection.y = 0f;
+            }
+            forwardDirection.Normalize();
+            LogInfo($"SpawnBread requested by '{req.viewer ?? "unknown"}' from playerPos={position}, cameraPos={playerCamera.position}, cameraForward={forwardDirection}");
 
 
             TestMod.ActionQueue.Enqueue(() =>
@@ -1254,11 +1400,10 @@ namespace BepinControl
                 for (int i = 0; i < 1; i++)
                 {
                     float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
-                    Vector3 spawnPosition = new Vector3(
-                        playerCamera.position.x + forwardDirection.x * spawnDifference,
-                        playerCamera.position.y + 1.0f,
-                        playerCamera.position.z + forwardDirection.z * spawnDifference
-                    );
+                    Vector3 spawnPosition = pos.position + forwardDirection * spawnDifference;
+                    spawnPosition.y = pos.position.y + 1.0f;
+
+                    LogInfo($"SpawnBread using spawnDifference={spawnDifference:F3}, spawnPosition={spawnPosition}");
 
                     crowdDelegatesInstance.Spawn_Bread(spawnPosition, Quaternion.identity);
 
@@ -1279,10 +1424,25 @@ namespace BepinControl
             Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
             Vector3 position = pos.position;
             Quaternion rotation = pos.rotation;
-            Transform playerCamera = Camera.main?.transform ?? UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
-            Vector3 forwardDirection = playerCamera.forward;
+            Transform playerCamera = CSingleton<InteractionPlayerController>.Instance.m_CameraController?.transform
+                ?? CSingleton<InteractionPlayerController>.Instance.m_Cam?.transform
+                ?? Camera.main?.transform
+                ?? UnityEngine.Object.FindObjectOfType<Camera>()?.transform;
+            if (!playerCamera)
+            {
+                LogError("SpawnMilk failed: player camera was not found.");
+                return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
+            }
 
-            if (!playerCamera) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_FAILURE, "Unable to spawn item.");
+            Vector3 forwardDirection = playerCamera.forward;
+            forwardDirection.y = 0f;
+            if (forwardDirection.sqrMagnitude < 0.001f)
+            {
+                forwardDirection = pos.forward;
+                forwardDirection.y = 0f;
+            }
+            forwardDirection.Normalize();
+            LogInfo($"SpawnMilk requested by '{req.viewer ?? "unknown"}' from playerPos={position}, cameraPos={playerCamera.position}, cameraForward={forwardDirection}");
 
 
             TestMod.ActionQueue.Enqueue(() =>
@@ -1295,11 +1455,10 @@ namespace BepinControl
                 for (int i = 0; i < 1; i++)
                 {
                     float spawnDifference = UnityEngine.Random.Range(0.1f, 1.0f);
-                    Vector3 spawnPosition = new Vector3(
-                        playerCamera.position.x + forwardDirection.x * spawnDifference,
-                        playerCamera.position.y + 1.0f,
-                        playerCamera.position.z + forwardDirection.z * spawnDifference
-                    );
+                    Vector3 spawnPosition = pos.position + forwardDirection * spawnDifference;
+                    spawnPosition.y = pos.position.y + 1.0f;
+
+                    LogInfo($"SpawnMilk using spawnDifference={spawnDifference:F3}, spawnPosition={spawnPosition}");
 
                     crowdDelegatesInstance.Spawn_Milk(spawnPosition, Quaternion.identity);
                 }
@@ -1316,8 +1475,10 @@ namespace BepinControl
         public class InteractableObject2 : MonoBehaviour
         {
             private static InteractableObject2 currentlyHeldObject = null;
+            private string debugLabel = "Food";
 
             private bool isHeld = false;
+            private Camera playerCameraComponent;
             private Transform playerCamera;
             
             private Color originalColor;
@@ -1327,7 +1488,7 @@ namespace BepinControl
 
             private Transform playerTransform;
 
-            private float maxPickupDistance = 3.5f;
+            private float maxPickupDistance = 5.0f;
 
             private float moveSpeed = 5.0f;
 
@@ -1337,19 +1498,48 @@ namespace BepinControl
 
             private float interactionDelay = 1.0f;
 
+            public void SetDebugLabel(string label)
+            {
+                if (!string.IsNullOrEmpty(label))
+                {
+                    debugLabel = label;
+                }
+            }
+
+            private bool RefreshPlayerCamera()
+            {
+                playerCameraComponent = CSingleton<InteractionPlayerController>.Instance.m_Cam
+                    ?? Camera.main
+                    ?? FindObjectOfType<Camera>();
+
+                if (playerCameraComponent == null)
+                {
+                    playerCamera = null;
+                    return false;
+                }
+
+                playerCamera = playerCameraComponent.transform;
+                return true;
+            }
+
             void Start()
             {
                 playerTransform = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
 
-                playerCamera = Camera.main?.transform;
-
-                if (playerCamera == null)
+                if (!RefreshPlayerCamera())
                 {
-                    playerCamera = FindObjectOfType<Camera>()?.transform;
-                    if (playerCamera == null)
-                    {
-                        return;
-                    }
+                    LogError($"{debugLabel} interactable failed to initialize because no gameplay camera was found.");
+                    return;
+                }
+
+                int colliderCount = GetComponentsInChildren<Collider>(true).Length;
+                int rigidbodyCount = GetComponentsInChildren<Rigidbody>(true).Length;
+                int audioSourceCount = GetComponentsInChildren<AudioSource>(true).Length;
+                LogInfo($"{debugLabel} interactable initialized on '{gameObject.name}' at {transform.position}. colliders={colliderCount}, rigidbodies={rigidbodyCount}, childCount={transform.childCount}, audioSources={audioSourceCount}");
+
+                if (rigidbodyCount == 0)
+                {
+                    LogWarning($"{debugLabel} interactable has no rigidbody; TryPickupObjectUnderMouse may never see it.");
                 }
 
             }
@@ -1461,7 +1651,14 @@ namespace BepinControl
                     // Apply a random rotation of 0, 90, 180, or 270 degrees on the Y-axis
                     int randomAngleIndex = UnityEngine.Random.Range(0, 4);  // Generates 0, 1, 2, or 3
                     float randomAngle = randomAngleIndex * 90.0f;
-                    transform.GetChild(0).transform.Rotate(Vector3.up, randomAngle);
+                    if (transform.childCount > 0)
+                    {
+                        transform.GetChild(0).transform.Rotate(Vector3.up, randomAngle);
+                    }
+                    else
+                    {
+                        LogWarning($"{debugLabel} hold animation skipped child rotation because the instance has no children.");
+                    }
                     //transform.Rotate(Vector3.up, randomAngle);  // Rotate the object on the Y-axis
                 }
 
@@ -1472,30 +1669,41 @@ namespace BepinControl
 
             private void TryPickupObjectUnderMouse()
             {
-                Ray ray = playerCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+                if (!RefreshPlayerCamera())
+                {
+                    LogError($"{debugLabel} pickup failed because the gameplay camera is null.");
+                    return;
+                }
+
+                Ray ray = playerCameraComponent.ScreenPointToRay(Input.mousePosition);
                 RaycastHit[] hits = Physics.RaycastAll(ray, maxPickupDistance);
 
                 bool breadHit = false;
 
                 foreach (RaycastHit hit in hits)
                 {
-
-                    if(!hit.rigidbody)
+                    if (hit.collider == null)
                     {
                         continue;
                     }
 
-
-                    if (hit.rigidbody != null && hit.rigidbody.gameObject == gameObject)
+                    InteractableObject2 hitInteractable = hit.collider.GetComponentInParent<InteractableObject2>();
+                    if (hitInteractable == this)
                     {
                         breadHit = true;
+                        LogInfo($"{debugLabel} pickup matched collider '{hit.collider.name}' at distance {hit.distance:F3}.");
                         break;
                     }
                 }
                 
                 if (breadHit)
                 {
+                    LogInfo($"{debugLabel} pickup raycast matched spawned object.");
                     PickUpObject();
+                }
+                else if (hits.Length > 0)
+                {
+                    LogWarning($"{debugLabel} pickup raycast hit {hits.Length} collider(s), but none resolved back to this object's rigidbody.");
                 }
                
             }
@@ -1504,6 +1712,7 @@ namespace BepinControl
             {
                 isHeld = true;
                 currentlyHeldObject = this;
+                LogInfo($"{debugLabel} picked up.");
                 
                 
             }
@@ -1513,6 +1722,7 @@ namespace BepinControl
 
                 isHeld = false;
                 currentlyHeldObject = null;
+                LogInfo($"{debugLabel} released.");
 
 
                 
@@ -1537,6 +1747,7 @@ namespace BepinControl
 
             private void EatObject()
             {
+                LogInfo($"{debugLabel} eat started.");
 
 
 
@@ -1556,11 +1767,23 @@ namespace BepinControl
 
                 Vector3 initialPosition = transform.position;
 
-                AudioSource audioSource = transform.GetChild(0).GetComponent<AudioSource>();
+                AudioSource audioSource = null;
+                if (transform.childCount > 0)
+                {
+                    audioSource = transform.GetChild(0).GetComponent<AudioSource>();
+                }
+                else
+                {
+                    LogWarning($"{debugLabel} eat animation has no child transform for audio lookup.");
+                }
 
                 if (audioSource != null)
                 {
                     audioSource.Play();
+                }
+                else
+                {
+                    LogWarning($"{debugLabel} eat animation did not find an AudioSource.");
                 }
 
                 while (elapsedTime < duration)
@@ -1573,6 +1796,7 @@ namespace BepinControl
                 }
 
 
+                LogInfo($"{debugLabel} eat finished. Destroying spawned object.");
                 Destroy(gameObject);
             }
 
