@@ -48,11 +48,19 @@ namespace BepinControl
 
         public void Send(Socket socket)
         {
+            if (socket == null || !socket.Connected)
+                return;
+
             byte[] tmpData = Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(this));
             byte[] outData = new byte[tmpData.Length + 1];
             Buffer.BlockCopy(tmpData, 0, outData, 0, tmpData.Length);
             outData[tmpData.Length] = 0;
-            socket.Send(outData);
+
+            lock (ControlClient.SocketSendLock)
+            {
+                if (socket.Connected)
+                    socket.Send(outData);
+            }
         }
 
         public class GenericMessage
