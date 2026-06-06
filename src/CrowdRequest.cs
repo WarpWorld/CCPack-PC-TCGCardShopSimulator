@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using Newtonsoft.Json;
 using static UnityEngine.GraphicsBuffer;
 
@@ -32,12 +33,14 @@ namespace BepinControl
                 if (socket.Poll(RECV_TIME, SelectMode.SelectRead))
                 {
                     read = socket.Receive(buf);
-                    if (read < 0) return null;
+                    if (read <= 0) return null;
 
-                    content += Encoding.ASCII.GetString(buf);
+                    content += Encoding.ASCII.GetString(buf, 0, read);
                 }
                 else
-                    CrowdResponse.KeepAlive(socket);
+                {
+                    Thread.Sleep(5);
+                }
             } while (read == 0 || (read == RECV_BUF && buf[RECV_BUF - 1] != 0));
 
             return JsonConvert.DeserializeObject<CrowdRequest>(content);

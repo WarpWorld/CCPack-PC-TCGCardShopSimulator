@@ -22,7 +22,7 @@ namespace BepinControl
         // Mod Details
         private const string modGUID = "WarpWorld.CrowdControl";
         private const string modName = "Crowd Control";
-        private const string modVersion = "1.1.11";
+        private const string modVersion = "1.1.12";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -96,8 +96,8 @@ namespace BepinControl
             try
             {
                 client = new ControlClient();
-                new Thread(new ThreadStart(client.NetworkLoop)).Start();
-                new Thread(new ThreadStart(client.RequestLoop)).Start();
+                new Thread(new ThreadStart(client.NetworkLoop)) { IsBackground = true, Name = "CrowdControl-Network" }.Start();
+                new Thread(new ThreadStart(client.RequestLoop)) { IsBackground = true, Name = "CrowdControl-Request" }.Start();
 
             }
             catch (Exception e)
@@ -402,6 +402,8 @@ namespace BepinControl
         [HarmonyPrefix]
         static void RunEffects()
         {
+            ControlClient.UpdateReadyState();
+
             if (UnityEngine.Input.GetKeyDown(KeyCode.F6))
             {
                 isTwitchChatAllowed = !isTwitchChatAllowed;
@@ -529,19 +531,9 @@ namespace BepinControl
         {
             static bool Prefix()
             {
-
                 try
                 {
-                    if (ControlClient.Socket != null && ControlClient.Socket.Connected)
-                    {
-                        ControlClient.Socket.Shutdown(SocketShutdown.Both);
-                        ControlClient.Socket.Close();
-                        ControlClient.Socket.Dispose();
-                    }
-
-
-                    ControlClient clientInstance = new ControlClient();
-                    clientInstance.Stop();
+                    Instance?.client?.Stop();
                     mls.LogInfo("ControlClient stopped successfully.");
                 }
                 catch (Exception ex)
