@@ -15,6 +15,8 @@ public class TCGCardShopSimulator : SimpleTCPPack<SimpleTCPServerConnector>
     public override ISimpleTCPPack.MessageFormatType MessageFormat => ISimpleTCPPack.MessageFormatType.CrowdControlLegacy;
 
     public TCGCardShopSimulator(UserRecord player, Func<CrowdControlBlock, bool> responseHandler, Action<object> statusUpdateHandler) : base(player, responseHandler, statusUpdateHandler) { }
+    protected override SITimeSpan GameStateCheckInterval { get; } = 0.5f;
+
 
     public override Game Game { get; } = new("TCG Card Shop Simulator", "TCGCardShopSimulator", "PC", ConnectorType.SimpleTCPServerConnector);
 
