@@ -1,4 +1,5 @@
 using BepInEx;
+using CMF;
 using HeathenEngineering.SteamworksIntegration;
 using I2.Loc;
 using System;
@@ -207,6 +208,67 @@ namespace BepinControl
             }
         }
 
+        private static TMP_FontAsset fallbackFontAsset;
+
+        // Font assets serialized inside our asset bundles can come back with a null material after the game
+        // upgrades its TextMeshPro package, which makes TMP throw NullReferenceException every frame while
+        // rendering. Swap any broken text component over to a font asset the game itself is using.
+        private static TMP_FontAsset GetGameFontAsset()
+        {
+            if (fallbackFontAsset != null && fallbackFontAsset.material != null) return fallbackFontAsset;
+
+            TMP_FontAsset candidate = TMP_Settings.defaultFontAsset;
+            if (candidate == null || candidate.material == null)
+            {
+                candidate = null;
+                foreach (TMP_Text text in UnityEngine.Object.FindObjectsOfType<TMP_Text>(true))
+                {
+                    if (text.font != null && text.font.material != null)
+                    {
+                        candidate = text.font;
+                        break;
+                    }
+                }
+            }
+
+            fallbackFontAsset = candidate;
+            return fallbackFontAsset;
+        }
+
+        public static void FixBundleTextFonts(GameObject instance, string label)
+        {
+            if (instance == null) return;
+            try
+            {
+                TMP_Text[] texts = instance.GetComponentsInChildren<TMP_Text>(true);
+                int fixedCount = 0;
+                foreach (TMP_Text text in texts)
+                {
+                    bool broken = text.font == null || text.font.material == null || text.fontSharedMaterial == null;
+                    if (!broken) continue;
+
+                    TMP_FontAsset font = GetGameFontAsset();
+                    if (font == null)
+                    {
+                        LogWarning($"{label}: text '{text.name}' has a broken font asset and no game font was found to replace it. Disabling the text.");
+                        text.enabled = false;
+                        continue;
+                    }
+                    text.font = font;
+                    text.fontSharedMaterial = font.material;
+                    fixedCount++;
+                }
+                if (fixedCount > 0)
+                {
+                    LogInfo($"{label}: replaced the font on {fixedCount}/{texts.Length} text component(s) with '{GetGameFontAsset()?.name}'.");
+                }
+            }
+            catch (Exception e)
+            {
+                LogError($"{label}: failed to fix text fonts: {e}");
+            }
+        }
+
         public void Spawn_HypeTrain(Vector3 position, Quaternion rotation, CrowdRequest.SourceDetails sourceDetails)
         {
 
@@ -240,7 +302,9 @@ namespace BepinControl
                     return;
                 }
 
-                HypeTrain hypeTrain = UnityEngine.Object.Instantiate(hypetrainPrefab, position, rotation).GetComponent<HypeTrain>();
+                GameObject hypeTrainInstance = UnityEngine.Object.Instantiate(hypetrainPrefab, position, rotation);
+                FixBundleTextFonts(hypeTrainInstance, "HypeTrain");
+                HypeTrain hypeTrain = hypeTrainInstance.GetComponent<HypeTrain>();
                 if (null == hypeTrain)
                 {
                     Debug.LogError("No Train?");
@@ -1945,6 +2009,72 @@ namespace BepinControl
             }
 
             return new CrowdResponse(req.GetReqID(), status, message);
+        }
+
+        private static CrowdResponse StartTimedEffect(CrowdRequest req, TimedType type, int defaultSeconds, params TimedType[] conflictingTypes)
+        {
+            int dur = defaultSeconds;
+            if (req.duration > 0) dur = req.duration / 1000;
+
+            if (TimedThread.isRunning(type)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            foreach (TimedType conflict in conflictingTypes)
+            {
+                if (TimedThread.isRunning(conflict)) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            }
+
+            new Thread(new TimedThread(req.GetReqID(), type, dur * 1000).Run).Start();
+            return new TimedResponse(req.GetReqID(), dur * 1000, CrowdResponse.Status.STATUS_SUCCESS);
+        }
+
+        public static CrowdResponse PlayerSpeed(ControlClient client, CrowdRequest req)
+        {
+            if (CSingleton<InteractionPlayerController>.Instance?.m_WalkerCtrl == null) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            TimedType type = req.code == "player_fast" ? TimedType.PLAYER_FAST : TimedType.PLAYER_SLOW;
+            return StartTimedEffect(req, type, 30, TimedType.PLAYER_FAST, TimedType.PLAYER_SLOW);
+        }
+
+        public static CrowdResponse LowGravity(ControlClient client, CrowdRequest req)
+        {
+            if (CSingleton<InteractionPlayerController>.Instance?.m_WalkerCtrl == null) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            return StartTimedEffect(req, TimedType.LOW_GRAVITY, 30);
+        }
+
+        public static CrowdResponse GameSpeed(ControlClient client, CrowdRequest req)
+        {
+            if (Timed.IsGamePaused()) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "");
+            TimedType type = req.code == "slowmo" ? TimedType.GAME_SLOW : TimedType.GAME_FAST;
+            return StartTimedEffect(req, type, 20, TimedType.GAME_SLOW, TimedType.GAME_FAST);
+        }
+
+        public static CrowdResponse HyperCustomers(ControlClient client, CrowdRequest req)
+        {
+            if (!CSingleton<CustomerManager>.Instance.HasCustomerInShop()) return new CrowdResponse(req.GetReqID(), CrowdResponse.Status.STATUS_RETRY, "No customers in the shop");
+            return StartTimedEffect(req, TimedType.HYPER_CUSTOMERS, 30);
+        }
+
+        public static CrowdResponse MuteAudio(ControlClient client, CrowdRequest req)
+        {
+            return StartTimedEffect(req, TimedType.MUTE_AUDIO, 30);
+        }
+
+        public static CrowdResponse LeaveReview(ControlClient client, CrowdRequest req)
+        {
+            CrowdResponse.Status status = CrowdResponse.Status.STATUS_SUCCESS;
+            bool isBad = req.code == "badreview";
+            try
+            {
+                TestMod.ActionQueue.Enqueue(() =>
+                {
+                    // goodBadLevel 0 = 1 star text, 2 = good text (4 stars). higherStarChanceAdd pushes the +1 star roll to never/always.
+                    CustomerReviewManager.AddCustomerReview(ECustomerReviewType.StoreGeneric, EItemType.None, isBad ? 0 : 2, isBad ? -100 : 100);
+                });
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
+                status = CrowdResponse.Status.STATUS_RETRY;
+            }
+            return new CrowdResponse(req.GetReqID(), status, "");
         }
 
         public static void setProperty(System.Object a, string prop, System.Object val)

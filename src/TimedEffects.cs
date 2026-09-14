@@ -33,7 +33,12 @@ namespace BepinControl
         ALLOW_MISCHARGE,
         WORKERS_FAST,
         HUGE_BOXES,
-        OPENING_PACK
+        OPENING_PACK,
+        PLAYER_FAST,
+        PLAYER_SLOW,
+        LOW_GRAVITY,
+        HYPER_CUSTOMERS,
+        MUTE_AUDIO
     }
 
 
@@ -41,6 +46,49 @@ namespace BepinControl
     {
         public TimedType type;
         public static float org_FOV = 80f;
+        public static float org_MoveSpeed = 7f;
+        public static float org_Gravity = 30f;
+        public static float org_JumpSpeed = 10f;
+        public const float SLOWMO_SCALE = 0.5f;
+        public const float FASTFORWARD_SCALE = 2f;
+        public const float HYPER_CUSTOMER_MULTIPLIER = 4f;
+
+        public static bool IsGamePaused()
+        {
+            try
+            {
+                return PauseScreen.Instance != null && PauseScreen.Instance.m_ScreenGrp != null && PauseScreen.Instance.m_ScreenGrp.activeSelf;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static void SetTimeScale(float scale)
+        {
+            if (IsGamePaused()) return;
+            Time.timeScale = scale;
+        }
+
+        public static void ApplyCustomerSpeedMultiplier(float multiplier)
+        {
+            try
+            {
+                List<Customer> customers = CSingleton<CustomerManager>.Instance.GetCustomerList();
+                if (customers == null) return;
+                foreach (Customer customer in customers)
+                {
+                    if (customer == null || !customer.isActiveAndEnabled) continue;
+                    if (multiplier <= 1f) customer.ResetExtraSpeedMultiplier();
+                    else customer.SetExtraSpeedMultiplier(multiplier);
+                }
+            }
+            catch (Exception e)
+            {
+                TestMod.mls.LogInfo(e.ToString());
+            }
+        }
         float old;
         
 
@@ -69,6 +117,50 @@ namespace BepinControl
         {
             switch (type)
             {
+                case TimedType.GAME_SLOW:
+                    {
+                        TestMod.ActionQueue.Enqueue(() => { SetTimeScale(SLOWMO_SCALE); });
+                        break;
+                    }
+                case TimedType.GAME_FAST:
+                    {
+                        TestMod.ActionQueue.Enqueue(() => { SetTimeScale(FASTFORWARD_SCALE); });
+                        break;
+                    }
+                case TimedType.PLAYER_FAST:
+                case TimedType.PLAYER_SLOW:
+                    {
+                        bool fast = type == TimedType.PLAYER_FAST;
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            AdvancedWalkerController walker = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl;
+                            org_MoveSpeed = walker.movementSpeed;
+                            walker.movementSpeed = org_MoveSpeed * (fast ? 2.5f : 0.35f);
+                        });
+                        break;
+                    }
+                case TimedType.LOW_GRAVITY:
+                    {
+                        TestMod.ActionQueue.Enqueue(() =>
+                        {
+                            AdvancedWalkerController walker = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl;
+                            org_Gravity = walker.gravity;
+                            org_JumpSpeed = walker.jumpSpeed;
+                            walker.gravity = org_Gravity * 0.2f;
+                            walker.jumpSpeed = org_JumpSpeed * 1.5f;
+                        });
+                        break;
+                    }
+                case TimedType.HYPER_CUSTOMERS:
+                    {
+                        TestMod.ActionQueue.Enqueue(() => { ApplyCustomerSpeedMultiplier(HYPER_CUSTOMER_MULTIPLIER); });
+                        break;
+                    }
+                case TimedType.MUTE_AUDIO:
+                    {
+                        TestMod.ActionQueue.Enqueue(() => { SoundManager.MuteAllSound(); });
+                        break;
+                    }
                 case TimedType.SET_LANGUAGE:
                     {
                         TestMod.ActionQueue.Enqueue(() =>
@@ -221,6 +313,41 @@ namespace BepinControl
             {
                 switch(etype)
                 {
+                    case TimedType.GAME_SLOW:
+                    case TimedType.GAME_FAST:
+                        {
+                            TestMod.ActionQueue.Enqueue(() => { SetTimeScale(1f); });
+                            break;
+                        }
+                    case TimedType.PLAYER_FAST:
+                    case TimedType.PLAYER_SLOW:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.movementSpeed = org_MoveSpeed;
+                            });
+                            break;
+                        }
+                    case TimedType.LOW_GRAVITY:
+                        {
+                            TestMod.ActionQueue.Enqueue(() =>
+                            {
+                                AdvancedWalkerController walker = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl;
+                                walker.gravity = org_Gravity;
+                                walker.jumpSpeed = org_JumpSpeed;
+                            });
+                            break;
+                        }
+                    case TimedType.HYPER_CUSTOMERS:
+                        {
+                            TestMod.ActionQueue.Enqueue(() => { ApplyCustomerSpeedMultiplier(1f); });
+                            break;
+                        }
+                    case TimedType.MUTE_AUDIO:
+                        {
+                            TestMod.ActionQueue.Enqueue(() => { SoundManager.UnMuteAllSound(); });
+                            break;
+                        }
                     case TimedType.FORCE_CASH:
                         {
                             TestMod.ActionQueue.Enqueue(() =>
@@ -350,6 +477,18 @@ namespace BepinControl
         public void tick()
         {
             frames++;
+            switch (type)
+            {
+                case TimedType.GAME_SLOW:
+                    SetTimeScale(SLOWMO_SCALE);//PauseScreen resets Time.timeScale to 1 on unpause, so keep re-applying
+                    break;
+                case TimedType.GAME_FAST:
+                    SetTimeScale(FASTFORWARD_SCALE);
+                    break;
+                case TimedType.HYPER_CUSTOMERS:
+                    if (frames % 60 == 0) ApplyCustomerSpeedMultiplier(HYPER_CUSTOMER_MULTIPLIER);//catch customers that spawned after the effect started
+                    break;
+            }
         }
     }
     public class TimedThread
