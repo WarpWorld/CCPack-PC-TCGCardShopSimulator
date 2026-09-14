@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../ConnectorLib.JSON/ConnectorLib.JSON.csproj" />
+  <Project Path="CrowdControl.TCGCardShopSimulator.csproj" />
+</Solution>

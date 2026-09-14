@@ -1,4 +1,5 @@
-﻿using CMF;
+#nullable disable
+using CMF;
 using I2.Loc;
 using System;
 using System.Collections.Generic;
@@ -6,10 +7,9 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using UnityEngine.Localization.Pseudo;
 using UnityEngine;
 
-namespace BepinControl
+namespace CrowdControl
 {
 
 
@@ -53,6 +53,26 @@ namespace BepinControl
         public const float FASTFORWARD_SCALE = 2f;
         public const float HYPER_CUSTOMER_MULTIPLIER = 4f;
 
+        /// <summary>Flips the payment type of customers already standing at the counter so the effect is visible immediately.</summary>
+        public static void ApplyPaymentTypeToWaitingCustomers()
+        {
+            try
+            {
+                List<Customer> customers = CSingleton<CustomerManager>.Instance.GetCustomerList();
+                if (customers == null) return;
+                foreach (Customer c in customers)
+                {
+                    if (c == null || c.m_CustomerCash == null || !c.m_CustomerCash.gameObject.activeSelf) continue;
+                    if (CrowdControlMod.ForceUseCredit) c.m_CustomerCash.m_IsCard = true;
+                    if (CrowdControlMod.ForceUseCash) c.m_CustomerCash.m_IsCard = false;
+                }
+            }
+            catch (Exception e)
+            {
+                CrowdControlMod.mls.LogInfo(e.ToString());
+            }
+        }
+
         public static bool IsGamePaused()
         {
             try
@@ -86,7 +106,7 @@ namespace BepinControl
             }
             catch (Exception e)
             {
-                TestMod.mls.LogInfo(e.ToString());
+                CrowdControlMod.mls.LogInfo(e.ToString());
             }
         }
         float old;
@@ -119,19 +139,19 @@ namespace BepinControl
             {
                 case TimedType.GAME_SLOW:
                     {
-                        TestMod.ActionQueue.Enqueue(() => { SetTimeScale(SLOWMO_SCALE); });
+                        CrowdControlMod.ActionQueue.Enqueue(() => { SetTimeScale(SLOWMO_SCALE); });
                         break;
                     }
                 case TimedType.GAME_FAST:
                     {
-                        TestMod.ActionQueue.Enqueue(() => { SetTimeScale(FASTFORWARD_SCALE); });
+                        CrowdControlMod.ActionQueue.Enqueue(() => { SetTimeScale(FASTFORWARD_SCALE); });
                         break;
                     }
                 case TimedType.PLAYER_FAST:
                 case TimedType.PLAYER_SLOW:
                     {
                         bool fast = type == TimedType.PLAYER_FAST;
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
                             AdvancedWalkerController walker = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl;
                             org_MoveSpeed = walker.movementSpeed;
@@ -141,7 +161,7 @@ namespace BepinControl
                     }
                 case TimedType.LOW_GRAVITY:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
                             AdvancedWalkerController walker = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl;
                             org_Gravity = walker.gravity;
@@ -153,34 +173,34 @@ namespace BepinControl
                     }
                 case TimedType.HYPER_CUSTOMERS:
                     {
-                        TestMod.ActionQueue.Enqueue(() => { ApplyCustomerSpeedMultiplier(HYPER_CUSTOMER_MULTIPLIER); });
+                        CrowdControlMod.ActionQueue.Enqueue(() => { ApplyCustomerSpeedMultiplier(HYPER_CUSTOMER_MULTIPLIER); });
                         break;
                     }
                 case TimedType.MUTE_AUDIO:
                     {
-                        TestMod.ActionQueue.Enqueue(() => { SoundManager.MuteAllSound(); });
+                        CrowdControlMod.ActionQueue.Enqueue(() => { SoundManager.MuteAllSound(); });
                         break;
                     }
                 case TimedType.SET_LANGUAGE:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
-                            string newLang = TestMod.NewLanguage;
+                            string newLang = CrowdControlMod.NewLanguage;
                             SettingScreen.Instance.OnPressLanguageSelect(newLang);
                         });
                         break;
                     }
                 case TimedType.FORCE_MATH:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
-                            TestMod.ForceMath = true;
+                            CrowdControlMod.ForceMath = true;
                         });
                         break;
                     }
                 //case TimedType.GAME_ULTRA_SLOW://Something to look at, altering Timescale in game
                    // {
-                        //TestMod.ActionQueue.Enqueue(() =>
+                        //CrowdControlMod.ActionQueue.Enqueue(() =>
                         //{
                            // CGameManager.Instance.m_TimeScale = (int)0.1;
                        // });
@@ -188,45 +208,47 @@ namespace BepinControl
                    // }
                 case TimedType.FORCE_CASH:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
-                            TestMod.ForceUseCredit = false;
-                            TestMod.ForceUseCash = true;
+                            CrowdControlMod.ForceUseCredit = false;
+                            CrowdControlMod.ForceUseCash = true;
+                            ApplyPaymentTypeToWaitingCustomers();
                         });
                         break;
                     }
                 case TimedType.FORCE_CARD:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
-                            TestMod.ForceUseCash = false;
-                            TestMod.ForceUseCredit = true;
+                            CrowdControlMod.ForceUseCash = false;
+                            CrowdControlMod.ForceUseCredit = true;
+                            ApplyPaymentTypeToWaitingCustomers();
                         });
                         break;
                     }
                 case TimedType.HIGH_FOV:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
                             CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
-                            org_FOV = (float)CrowdDelegates.getProperty(camera, "m_CurrentFOV");
+                            org_FOV = (float)GameActions.getProperty(camera, "m_CurrentFOV");
                             camera.UpdateFOV(140f);
                         });
                         break;
                     }
                 case TimedType.LOW_FOV:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
                             CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
-                            org_FOV = (float)CrowdDelegates.getProperty(camera, "m_CurrentFOV");
+                            org_FOV = (float)GameActions.getProperty(camera, "m_CurrentFOV");
                             camera.UpdateFOV(10f);
                         });
                         break;
                     }
                 case TimedType.INVERT_X:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
                             InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
                             IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
@@ -235,7 +257,7 @@ namespace BepinControl
                     }
                 case TimedType.INVERT_Y:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
                             InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
                             IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
@@ -245,26 +267,26 @@ namespace BepinControl
                     }
                 case TimedType.FORCE_EXACT_CHANGE:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
-                            TestMod.ExactChange = true;
+                            CrowdControlMod.ExactChange = true;
                         });
                         break;
                     }
                 case TimedType.FORCE_LARGE_BILLS:
                     {
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
-                            TestMod.LargeBills = true;
+                            CrowdControlMod.LargeBills = true;
                         });
                         break;
                     }
                 case TimedType.OPENING_PACK:
                     {
                         /*
-                        TestMod.ActionQueue.Enqueue(() =>
+                        CrowdControlMod.ActionQueue.Enqueue(() =>
                         {
-                            TestMod.autoOpenPacks = true;
+                            CrowdControlMod.autoOpenPacks = true;
                             FieldInfo itemListField = typeof(ItemSpawnManager).GetField("m_ItemList", BindingFlags.NonPublic | BindingFlags.Instance);
 
                             if (itemListField != null)
@@ -280,7 +302,7 @@ namespace BepinControl
 
                                     foreach (Item _item in spawnedItems)
                                     {
-                                        if (_item.GetItemType() == TestMod.spawnItem.itemType)
+                                        if (_item.GetItemType() == CrowdControlMod.spawnItem.itemType)
                                         {
                                             float distanceToPlayer = Vector3.Distance(playerTransform.position, _item.transform.position);
 
@@ -295,7 +317,7 @@ namespace BepinControl
                                     if (closestItem != null)
                                     {
                                         CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(closestItem);
-                                        TestMod.cardPack.OnDestroyed();
+                                        CrowdControlMod.cardPack.OnDestroyed();
                                     }
                                 }
                             }
@@ -316,13 +338,13 @@ namespace BepinControl
                     case TimedType.GAME_SLOW:
                     case TimedType.GAME_FAST:
                         {
-                            TestMod.ActionQueue.Enqueue(() => { SetTimeScale(1f); });
+                            CrowdControlMod.ActionQueue.Enqueue(() => { SetTimeScale(1f); });
                             break;
                         }
                     case TimedType.PLAYER_FAST:
                     case TimedType.PLAYER_SLOW:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.movementSpeed = org_MoveSpeed;
                             });
@@ -330,7 +352,7 @@ namespace BepinControl
                         }
                     case TimedType.LOW_GRAVITY:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 AdvancedWalkerController walker = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl;
                                 walker.gravity = org_Gravity;
@@ -340,26 +362,26 @@ namespace BepinControl
                         }
                     case TimedType.HYPER_CUSTOMERS:
                         {
-                            TestMod.ActionQueue.Enqueue(() => { ApplyCustomerSpeedMultiplier(1f); });
+                            CrowdControlMod.ActionQueue.Enqueue(() => { ApplyCustomerSpeedMultiplier(1f); });
                             break;
                         }
                     case TimedType.MUTE_AUDIO:
                         {
-                            TestMod.ActionQueue.Enqueue(() => { SoundManager.UnMuteAllSound(); });
+                            CrowdControlMod.ActionQueue.Enqueue(() => { SoundManager.UnMuteAllSound(); });
                             break;
                         }
                     case TimedType.FORCE_CASH:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 try
                                 {
-                                    TestMod.ForceUseCredit = false;
-                                    TestMod.ForceUseCash = false;
+                                    CrowdControlMod.ForceUseCredit = false;
+                                    CrowdControlMod.ForceUseCash = false;
                                 }
                                 catch (Exception e)
                                 {
-                                    TestMod.mls.LogInfo(e.ToString());
+                                    CrowdControlMod.mls.LogInfo(e.ToString());
                                     Timed.removeEffect(etype);
                                 }
                             });
@@ -367,16 +389,16 @@ namespace BepinControl
                         }
                     case TimedType.FORCE_CARD:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 try
                                 {
-                                    TestMod.ForceUseCash = false;
-                                    TestMod.ForceUseCredit = false;
+                                    CrowdControlMod.ForceUseCash = false;
+                                    CrowdControlMod.ForceUseCredit = false;
                                 }
                                 catch (Exception e)
                                 {
-                                    TestMod.mls.LogInfo(e.ToString());
+                                    CrowdControlMod.mls.LogInfo(e.ToString());
                                     Timed.removeEffect(etype);
                                 }
                             });
@@ -384,15 +406,15 @@ namespace BepinControl
                         }
                     case TimedType.FORCE_MATH:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 try
                                 {
-                                    TestMod.ForceMath = false;
+                                    CrowdControlMod.ForceMath = false;
                                 }
                                 catch (Exception e)
                                 {
-                                    TestMod.mls.LogInfo(e.ToString());
+                                    CrowdControlMod.mls.LogInfo(e.ToString());
                                     Timed.removeEffect(etype);
                                 }
                             });
@@ -401,7 +423,7 @@ namespace BepinControl
                     case TimedType.HIGH_FOV:
                     case TimedType.LOW_FOV:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 CameraFOVControl camera = CSingleton<CameraFOVControl>.Instance;
                                 camera.UpdateFOV(org_FOV);
@@ -410,7 +432,7 @@ namespace BepinControl
                         }
                     case TimedType.INVERT_X:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
                                 IPC.m_CameraMouseInput.invertHorizontalInput = !IPC.m_CameraMouseInput.invertHorizontalInput;
@@ -419,7 +441,7 @@ namespace BepinControl
                         }
                     case TimedType.INVERT_Y:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
                                 InteractionPlayerController IPC = CSingleton<InteractionPlayerController>.Instance;
                                 IPC.m_CameraMouseInput.invertVerticalInput = !IPC.m_CameraMouseInput.invertVerticalInput;
@@ -428,37 +450,37 @@ namespace BepinControl
                         }
                     case TimedType.SET_LANGUAGE:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
-                                string oldLang = TestMod.OrgLanguage;
+                                string oldLang = CrowdControlMod.OrgLanguage;
                                 SettingScreen.Instance.OnPressLanguageSelect(oldLang);
                             });
                             break;
                         }
                     case TimedType.FORCE_EXACT_CHANGE:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
-                                TestMod.ExactChange = false;
+                                CrowdControlMod.ExactChange = false;
                             });
                             break;
                         }
                     case TimedType.FORCE_LARGE_BILLS:
                         {
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
-                                TestMod.LargeBills = false;
+                                CrowdControlMod.LargeBills = false;
                             });
                             break;
                         }
                         case TimedType.OPENING_PACK:
                         {
                             /*
-                            TestMod.ActionQueue.Enqueue(() =>
+                            CrowdControlMod.ActionQueue.Enqueue(() =>
                             {
-                                TestMod.autoOpenPacks = false;
-                                CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFire", false);
-                                CrowdDelegates.setProperty(CardOpeningSequence.Instance, "m_IsAutoFireKeydown", false);
+                                CrowdControlMod.autoOpenPacks = false;
+                                GameActions.setProperty(CardOpeningSequence.Instance, "m_IsAutoFire", false);
+                                GameActions.setProperty(CardOpeningSequence.Instance, "m_IsAutoFireKeydown", false);
                             });
                             */
                             break;
@@ -466,7 +488,7 @@ namespace BepinControl
                 }
             } catch(Exception e)
             {
-                TestMod.mls.LogInfo(e.ToString());
+                CrowdControlMod.mls.LogInfo(e.ToString());
                 return false;
             }
             return true;
@@ -488,167 +510,6 @@ namespace BepinControl
                 case TimedType.HYPER_CUSTOMERS:
                     if (frames % 60 == 0) ApplyCustomerSpeedMultiplier(HYPER_CUSTOMER_MULTIPLIER);//catch customers that spawned after the effect started
                     break;
-            }
-        }
-    }
-    public class TimedThread
-    {
-        public static List<TimedThread> threads = new List<TimedThread>();
-
-        public readonly Timed effect;
-        public int duration;
-        public int remain;
-        public int id;
-        public bool paused;
-
-        public static bool isRunning(TimedType t)
-        {
-            foreach (var thread in threads)
-            {
-                if (thread.effect.type == t) return true;
-            }
-            return false;
-        }
-
-
-        public static void tick()
-        {
-            foreach (var thread in threads)
-            {
-                if (!thread.paused)
-                {
-                   thread.effect.tick();
-                }
-            }
-        }
-        public static void addTime(int duration)
-        {
-            try
-            {
-                lock (threads)
-                {
-                    foreach (var thread in threads)
-                    {
-                        Interlocked.Add(ref thread.duration, duration+5);
-                        if (!thread.paused)
-                        {
-                            int time = Volatile.Read(ref thread.remain);
-                            new TimedResponse(thread.id, time, CrowdResponse.Status.STATUS_PAUSE).Send(ControlClient.Socket);
-                            thread.paused = true;
-                        }
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                TestMod.mls.LogInfo(e.ToString());
-            }
-        }
-
-        public static void tickTime(int duration)
-        {
-            try
-            {
-                lock (threads)
-                {
-                    foreach (var thread in threads)
-                    {
-                        int time = Volatile.Read(ref thread.remain);
-                        time -= duration;
-                        if (time < 0) time = 0;
-                        Volatile.Write(ref thread.remain, time);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                TestMod.mls.LogInfo(e.ToString());
-            }
-        }
-
-        public static void unPause()
-        {
-            try
-            {
-                lock (threads)
-                {
-                    foreach (var thread in threads)
-                    {
-                        if (thread.paused)
-                        {
-                            int time = Volatile.Read(ref thread.remain);
-                            new TimedResponse(thread.id, time, CrowdResponse.Status.STATUS_RESUME).Send(ControlClient.Socket);
-                            thread.paused = false;
-                        }
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                TestMod.mls.LogInfo(e.ToString());
-            }
-        }
-
-        public TimedThread(int id, TimedType type, int duration, Dictionary<string, object> customVariables = null)
-        {
-            this.effect = new Timed(type);
-            this.duration = duration;
-            this.remain = duration;
-            this.id = id;
-            paused = false;
-
-            if (customVariables == null)
-            {
-                customVariables = new Dictionary<string, object>();
-            }
-
-            this.effect.SetCustomVariables(customVariables);
-            try
-            {
-                lock (threads)
-                {
-                    threads.Add(this);
-                }
-            }
-            catch (Exception e)
-            {
-                TestMod.mls.LogInfo(e.ToString());
-            }
-        }
-
-        public void Run()
-        {
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-
-            effect.addEffect();
-            bool error = false;
-            try
-            {
-                do
-                {
-                    error = false;
-                    int time = Volatile.Read(ref duration); ;
-                    while (time > 0)
-                    {
-                        Interlocked.Add(ref duration, -time);
-                        Thread.Sleep(time);
-
-                        time = Volatile.Read(ref duration);
-                    }
-                    if (Timed.removeEffect(effect.type))
-                    {
-                        lock (threads)
-                        {
-                            threads.Remove(this);
-                        }
-                        new TimedResponse(id, 0, CrowdResponse.Status.STATUS_STOP).Send(ControlClient.Socket);
-                    }
-                    else error = true;
-                } while (error);
-            }
-            catch (Exception e)
-            {
-                TestMod.mls.LogInfo(e.ToString());
             }
         }
     }

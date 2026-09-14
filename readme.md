@@ -8,6 +8,11 @@ Crowd Control supports multiple platforms, such as Twitch, YouTube, Discord and 
 
 To get started using this project you will need to check the ``readme.md`` in the src folder.
 
+The mod (``src``) is built on the [WarpWorld BepInEx example plugin](https://github.com/WarpWorld/BepinEx-Example-Plugin)
+and talks to the Crowd Control app with the ConnectorLib.JSON protocol (mod 2.0.0 and newer). Build it with
+``dotnet build src\CrowdControl.TCGCardShopSimulator.csproj -c Release``; the build copies the plugin into the game's
+BepInEx folder and into ``mod``. ``tools\cc_test_server.py`` is a fake Crowd Control app for testing effects locally.
+
 You can load the ``TCGCardShopSimulator.cs`` in our SDK which can be found on our [Developer Page](https://developer.crowdcontrol.live/sdk/).
 
 Follow instructions on that page to learn how to add effects to your CS file and how to activate them.
