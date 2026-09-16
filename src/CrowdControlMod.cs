@@ -17,7 +17,7 @@ public partial class CrowdControlMod : BaseUnityPlugin
     // csproj - the DLL name is set separately via the GameName property in BepinExExample.csproj)
     public const string MOD_GUID = "WarpWorld.CrowdControl"; //unique BepInEx plugin ID - fine to leave as-is since only one Crowd Control mod is installed per game
     public const string MOD_NAME = "Crowd Control"; //display name shown in the BepInEx log
-    public const string MOD_VERSION = "1.2.0"; //bump this with each release of your mod (the ccver file next to the DLL wins when present)
+    public const string MOD_VERSION = "1.2.1"; //bump this with each release of your mod (the ccver file next to the DLL wins when present)
 
     /// <summary>Whether this mod supports community-written effects loaded from disk.</summary>
     /// <remarks>
@@ -168,18 +168,36 @@ public partial class CrowdControlMod : BaseUnityPlugin
     private bool m_clientPresent;
     private float m_nextClientCheck;
 
-    private const float CLIENT_CHECK_INTERVAL = 2f;
+    private const float CLIENT_CHECK_INTERVAL = 5f;
+    private System.Threading.Tasks.Task<bool>? m_clientCheckTask;
 
     /// <summary>Refreshes whether the Crowd Control app is running, at a sane interval.</summary>
+    /// <remarks>
+    /// While connected the answer is obviously yes. Otherwise the probe (a named semaphore, falling back
+    /// to a full process scan) runs on a worker thread - a process scan on the game thread is a visible hitch.
+    /// </remarks>
     private void UpdateClientPresence()
     {
+        if (ClientConnected)
+        {
+            m_clientPresent = true;
+            return;
+        }
+
+        if (m_clientCheckTask != null)
+        {
+            if (!m_clientCheckTask.IsCompleted) return;
+            m_clientPresent = m_clientCheckTask.Status == System.Threading.Tasks.TaskStatus.RanToCompletion && m_clientCheckTask.Result;
+            m_clientCheckTask = null;
+        }
+
         float now = Time.realtimeSinceStartup;
         if (now < m_nextClientCheck) return;
-
         m_nextClientCheck = now + CLIENT_CHECK_INTERVAL;
 
-        try { m_clientPresent = Client?.CrowdControlClientFound ?? false; }
-        catch { m_clientPresent = false; }
+        NetworkClient? client = Client;
+        if (client == null) { m_clientPresent = false; return; }
+        m_clientCheckTask = System.Threading.Tasks.Task.Run(() => client.CrowdControlClientFound);
     }
 
     /// <summary>Draws the connection indicator and any active timed effects.</summary>

@@ -209,7 +209,7 @@ namespace CrowdControl
         // Font assets serialized inside our asset bundles can come back with a null material after the game
         // upgrades its TextMeshPro package, which makes TMP throw NullReferenceException every frame while
         // rendering. Swap any broken text component over to a font asset the game itself is using.
-        private static TMP_FontAsset GetGameFontAsset()
+        public static TMP_FontAsset GetGameFontAsset()
         {
             if (fallbackFontAsset != null && fallbackFontAsset.material != null) return fallbackFontAsset;
 
@@ -476,33 +476,70 @@ namespace CrowdControl
             return new EffectResponse(req.ID, status, message);
         }
 
+        /// <summary>
+        /// True when a viewer-spawned customer should be refused. Counts customers the way the game does
+        /// (those at the play table or in a tournament don't count) against the configurable cap; the game
+        /// keeps its shop topped up to its own daily limit, so that limit is not used here.
+        /// </summary>
+        private static bool IsShopFullForSpawn()
+        {
+            int cap = UI.ModSettings.SpawnCustomerCap;
+            if (cap <= 0) return false;
+            CustomerManager cm = CustomerManager.Instance;
+            int inShop = cm.m_TotalCurrentCustomerCount - cm.m_TotalPlaytableCustomerCount - cm.m_TotalTournamentCustomerCount;
+            return inShop >= cap;
+        }
+
+        /// <summary>Picks up the streamer's Twitch channel from the request's target list, when the app sends one.</summary>
+        private static bool loggedUnknownTargets = false;
+
+        private static void ApplyTwitchChannel(EffectRequest req)
+        {
+            try
+            {
+                if (req.targets == null || req.targets.Count == 0) return;
+                foreach (JToken target in req.targets)
+                {
+                    string service = (target?["profile"] ?? target?["service"] ?? target?["type"] ?? target?["platform"])?.ToString() ?? "";
+                    if (!service.ToLowerInvariant().Contains("twitch")) continue;
+                    string name = (target["name"] ?? target["login"] ?? target["channel"] ?? target["displayName"])?.ToString();
+                    CrowdControlMod.SetTwitchChannel(name, "effect request");
+                    return;
+                }
+                if (!loggedUnknownTargets)
+                {
+                    loggedUnknownTargets = true;
+                    CrowdControlMod.mls?.LogInfo($"Effect targets carried no Twitch channel: {req.targets.ToString(Newtonsoft.Json.Formatting.None, Array.Empty<Newtonsoft.Json.JsonConverter>())}");
+                }
+            }
+            catch (Exception e)
+            {
+                CrowdControlMod.mls?.LogDebug($"Could not read the Twitch channel from the request: {e.Message}");
+            }
+        }
+
         public static EffectResponse SpawnCustomer(EffectRequest req)
         {
             EffectStatus status = EffectStatus.Success;
             string message = "";
             CustomerManager CM = CustomerManager.Instance;
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
-            int CustomerTotal = CustomerManager.Instance.m_TotalCurrentCustomerCount;//make sure we have < 28 Customers when we spawn
-            if (CustomerTotal == CustomerManager.Instance.m_CustomerCountMax) return EffectResponse.Retry(req.ID, "Too Many Customers in Shop");//Too many Customers?
+            if (IsShopFullForSpawn()) return EffectResponse.Retry(req.ID, "Too Many Customers in Shop");
             if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return EffectResponse.Retry(req.ID, "Store is Closed");
             try
             {
                 CrowdControlMod.ActionQueue.Enqueue(() =>
                 {
-                    if (req.targets != null)
-                    {
-                        if (req.targets.Count > 0 && req.targets[0]?["service"]?.ToString() == "twitch")
-                        {
-                            CrowdControlMod.twitchChannel = req.targets[0]?["name"]?.ToString() ?? "";
-                        }
-                    }
-                    CrowdControlMod.NameOverride = req.viewer;
+                    ApplyTwitchChannel(req);
+                    string viewerName = req.GetViewerDisplayName();
+                    CrowdControlMod.NameOverride = viewerName;
                     CrowdControlMod.isSmelly = false;
                     CustomerManager.Instance.m_CustomerCountMax += 1;
                     callFunc(CustomerManager.Instance, "AddCustomerPrefab", null);
                     Customer newCustomer = CM.GetNewCustomer(false);//spawn not smelly
+                    CrowdControlMod.NameOverride = "";
 
-                    newCustomer.name = req.viewer;
+                    if (newCustomer != null) newCustomer.name = viewerName;
                 });
             }
             catch (Exception e)
@@ -518,30 +555,25 @@ namespace CrowdControl
         {
             EffectStatus status = EffectStatus.Success;
             string message = "";
-            CustomerManager CM = CustomerManager.Instance; int CustomerTotal = CustomerManager.Instance.m_TotalCurrentCustomerCount;//make sure we have < 28 Customers when we spawn
-            if (CustomerTotal == CustomerManager.Instance.m_CustomerCountMax) return EffectResponse.Retry(req.ID, "Too Many Customers in Shop");//Too many Customers?
+            CustomerManager CM = CustomerManager.Instance;
+            if (IsShopFullForSpawn()) return EffectResponse.Retry(req.ID, "Too Many Customers in Shop");
             if (!CPlayerData.m_IsShopOpen || LightManager.GetHasDayEnded()) return EffectResponse.Retry(req.ID, "Store is Closed");
             try
             {
                 CrowdControlMod.ActionQueue.Enqueue(() =>
                 {
 
-                    if (req.targets != null)
-                    {
-
-                        if (req.targets.Count > 0 && req.targets[0]?["service"]?.ToString() == "twitch")
-                        {
-                            CrowdControlMod.twitchChannel = req.targets[0]?["name"]?.ToString() ?? "";
-                        }
-                    }
+                    ApplyTwitchChannel(req);
+                    string viewerName = req.GetViewerDisplayName();
                     CrowdControlMod.isSmelly = true;
-                    CrowdControlMod.NameOverride = req.viewer;
+                    CrowdControlMod.NameOverride = viewerName;
                     Customer Smelly = CM.GetNewCustomer(true);//Spawn him as Smelly
+                    CrowdControlMod.NameOverride = "";
                     if (Smelly != null)
                     {
                         Smelly.SetSmelly();
                         CustomerManager.Instance.AddToSmellyCustomerList(Smelly);
-                        Smelly.name = req.viewer;
+                        Smelly.name = viewerName;
                     }
                     CrowdControlMod.isSmelly = false;
 

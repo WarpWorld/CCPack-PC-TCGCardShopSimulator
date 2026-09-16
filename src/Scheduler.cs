@@ -161,6 +161,7 @@ public class Scheduler(CrowdControlMod mod, NetworkClient networkClient)
                         m_mod.Logger.LogError($"Effect start requested for unknown effect \"{er.code}\".");
                         return;
                     }
+                    m_mod.Logger.LogInfo($"Effect request #{er.id} '{er.code}' from viewer '{er.viewer ?? "(none)"}' targets={er.targets?.Count ?? 0} state={m_mod.GameStateManager.CurrentState}");
                     m_requestQueue.Enqueue(new(er, effect));
                 }
                 break;
@@ -279,6 +280,7 @@ public class Scheduler(CrowdControlMod mod, NetworkClient networkClient)
         {
             if (!m_mod.GameStateManager.IsReady(pReq.Request.code!))
             {
+                m_mod.Logger.LogInfo($"Effect request #{pReq.Request.id} '{pReq.Request.code}' -> Retry (game state {m_mod.GameStateManager.CurrentState})");
                 m_networkClient.SendAsync(new EffectResponse(pReq.Request.id, EffectStatus.Retry)).Forget();
                 continue;
             }
@@ -303,6 +305,7 @@ public class Scheduler(CrowdControlMod mod, NetworkClient networkClient)
                     response = EffectResponse.Failure(pReq.Request.id, StandardErrors.ExceptionThrown);
                     m_mod.Logger.LogError(e);
                 }
+                m_mod.Logger.LogInfo($"Effect request #{pReq.Request.id} '{pReq.Request.code}' -> {response.status}{(string.IsNullOrEmpty(response.message) ? "" : $" ({response.message})")}");
                 m_networkClient.AttachMetadata(response);
                 m_networkClient.SendAsync(response).Forget();
             }

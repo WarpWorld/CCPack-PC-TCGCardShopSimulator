@@ -15,12 +15,16 @@ public static class ModSettings
 {
     private const string SECTION = "Overlay";
     private const string SECTION_CUSTOM_EFFECTS = "CustomEffects";
+    private const string SECTION_TWITCH = "Twitch";
+    private const string SECTION_SPAWNING = "Spawning";
 
     private static ConfigEntry<bool> _showMessages;
     private static ConfigEntry<bool> _showIndicator;
     private static ConfigEntry<float> _messageSeconds;
     private static ConfigEntry<bool> _allowCustomEffects;
     private static ConfigEntry<bool> _customEffectDevReload;
+    private static ConfigEntry<string> _twitchChannel;
+    private static ConfigEntry<int> _spawnCustomerCap;
 
     /// <summary>Show a line on screen when an effect fires.</summary>
     public static bool ShowMessages => _showMessages?.Value ?? true;
@@ -44,6 +48,12 @@ public static class ModSettings
     /// <remarks>For writing effects, not for streaming with them - the replaced code stays in memory.</remarks>
     public static bool CustomEffectDevReload => _customEffectDevReload?.Value ?? false;
 
+    /// <summary>The Twitch channel whose chat drives the customer nameplate popups. Empty means use what the app sends.</summary>
+    public static string TwitchChannel => _twitchChannel?.Value ?? "";
+
+    /// <summary>Most customers allowed in the shop before viewer spawn effects are refused. 0 = no limit.</summary>
+    public static int SpawnCustomerCap => _spawnCustomerCap?.Value ?? 60;
+
     /// <summary>Binds the settings to the plugin's config file. Safe to call more than once.</summary>
     public static void Initialize(ConfigFile config)
     {
@@ -61,6 +71,16 @@ public static class ModSettings
             _messageSeconds = config.Bind(
                 SECTION, "MessageSeconds", 4f,
                 "How long an on-screen effect message stays visible, in seconds.");
+
+            _twitchChannel = config.Bind(
+                SECTION_TWITCH, "TwitchChannel", "",
+                "Twitch channel name (without #) to read chat from, so viewers can talk through the customer " +
+                "spawned with their name. Leave empty to use the channel the Crowd Control app reports.");
+
+            _spawnCustomerCap = config.Bind(
+                SECTION_SPAWNING, "SpawnCustomerCap", 60,
+                "Refuse viewer 'spawn customer' effects once this many customers are in the shop (customers at the " +
+                "play table or in a tournament don't count). The game's own daily limit is at most 30. 0 disables the limit.");
 
             //no settings for a feature this mod does not have - a knob that cannot do anything is
             //worse than no knob, because someone will find it and believe it works

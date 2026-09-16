@@ -30,10 +30,22 @@ public static class CustomerManagerPatches
 
     private static void GetNewCustomerPostfix(Customer __result)
     {
-        if (__result != null)
+        if (__result == null) return;
+        try
         {
             CrowdControlMod.AddNamePlateToCustomer(__result);
+        }
+        catch (Exception e)
+        {
+            CrowdControlMod.mls?.LogWarning($"Could not add a nameplate to the customer: {e}");
+        }
+        try
+        {
             CrowdControlMod.ConnectToTwitchChat();
+        }
+        catch (Exception e)
+        {
+            CrowdControlMod.mls?.LogWarning($"Could not start the Twitch chat listener: {e.Message}");
         }
     }
 }
@@ -45,6 +57,21 @@ public static class Patch_OnEnable
     {
         CrowdControlMod.loadedIntoWorld = true;
     }
+}
+
+// The game (since the 2026-09-16 update) ticks PlayCardSetUI before its play-card set is assigned, which
+// throws a NullReferenceException twice per frame per card set and floods the log badly enough to lag the
+// game. Skip those ticks until the UI has been initialised; the game's own code does nothing useful before then.
+[HarmonyPatch(typeof(PlayCardSetUI), "Update")]
+public static class PlayCardSetUI_Update_Guard
+{
+    static bool Prefix(PlayCardSet ___m_PlayCardSet) => ___m_PlayCardSet != null && ___m_PlayCardSet.m_PlayTableGame != null;
+}
+
+[HarmonyPatch(typeof(PlayCardSetUI), "LateUpdate")]
+public static class PlayCardSetUI_LateUpdate_Guard
+{
+    static bool Prefix(PlayCardSet ___m_PlayCardSet) => ___m_PlayCardSet != null && ___m_PlayCardSet.m_PlayTableGame != null;
 }
 
 [HarmonyPatch(typeof(UI_CashCounterScreen), "UpdateMoneyChangeAmount")]

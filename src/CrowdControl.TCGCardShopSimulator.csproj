@@ -30,8 +30,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The game ships Newtonsoft.Json 13.0.x in its Managed folder, so the package is compile-only here. -->
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4">
+    <!-- The game ships Newtonsoft.Json 13.0.2 in its Managed folder, so the package is compile-only here.
+         Keep this pinned to the game's version: newer packages add overloads (e.g. JToken.ToString(Formatting))
+         that compile fine and then throw MissingMethodException in the game. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0">

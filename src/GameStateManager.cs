@@ -206,6 +206,8 @@ public class GameStateManager(CrowdControlMod mod)
 
         if (force || (_last_game_state != newState))
         {
+            if (_last_game_state != newState)
+                mod.Logger.LogInfo($"Game state -> {newState}");
             _last_game_state = newState;
             return mod.Client.Send(new GameUpdate(newState, message));
         }
