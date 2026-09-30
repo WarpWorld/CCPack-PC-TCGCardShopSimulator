@@ -744,11 +744,20 @@ namespace CrowdControl
             string message = "";
 
             InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            //Teleporting away from the register (especially mid credit card payment) soft locks the player
+            if (player.m_CurrentGameState == EGameState.CashCounterState) return EffectResponse.Retry(req.ID);
             try
             {
                 CrowdControlMod.ActionQueue.Enqueue(() =>
                 {
-
+                    //State may have changed since the check above, exit the register cleanly before moving
+                    if (player.m_CurrentGameState == EGameState.CashCounterState)
+                    {
+                        if ((bool)getProperty(player, "m_IsInUIMode")) player.ExitUIMode();
+                        InteractableCashierCounter counter = getProperty(player, "m_CurrentCashierCounter") as InteractableCashierCounter;
+                        if (counter != null) counter.OnPressEsc();
+                        else player.OnExitCashCounterMode();
+                    }
 
                     Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
                     CrowdControlMod.mls.LogInfo($"Player POS: {pos.position}");

@@ -17,7 +17,7 @@ public partial class CrowdControlMod : BaseUnityPlugin
     // csproj - the DLL name is set separately via the GameName property in BepinExExample.csproj)
     public const string MOD_GUID = "WarpWorld.CrowdControl"; //unique BepInEx plugin ID - fine to leave as-is since only one Crowd Control mod is installed per game
     public const string MOD_NAME = "Crowd Control"; //display name shown in the BepInEx log
-    public const string MOD_VERSION = "1.2.1"; //bump this with each release of your mod (the ccver file next to the DLL wins when present)
+    public const string MOD_VERSION = "1.2.2"; //bump this with each release of your mod (the ccver file next to the DLL wins when present)
 
     /// <summary>Whether this mod supports community-written effects loaded from disk.</summary>
     /// <remarks>
