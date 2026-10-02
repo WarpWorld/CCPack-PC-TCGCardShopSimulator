@@ -1,5 +1,13 @@
 # TCG Card Shop Simulator
 
+## Pack metadata
+
+- **Game:** TCG Card Shop Simulator
+- **Crowd Control game ID:** `TCGCardShopSimulator`
+- **Connector:** `SimpleTCPServerConnector`
+- **Endpoint:** `127.0.0.1:51337`
+- **Mod framework:** BepInEx 5 (Mono)
+
 This pack uses a BepInEx 5 plugin that communicates with Crowd Control through
 the ConnectorLib.JSON protocol. The installable BepInEx layout is in `mod`;
 the game-specific plugin source is in `src`.
