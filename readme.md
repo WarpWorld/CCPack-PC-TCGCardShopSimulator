@@ -1,28 +1,51 @@
-# Crowd Control - TCG Card Shop Simulator
+# TCG Card Shop Simulator
 
-Crowd Control is an application that allows live streamers to enhance their gaming broadcasts by enabling real-time interaction between viewers and the game being played. Through Crowd Control, viewers can directly influence the gameplay experience, creating a dynamic and engaging environment that brings the audience closer to the action.
+This pack uses a BepInEx 5 plugin that communicates with Crowd Control through
+the ConnectorLib.JSON protocol. The installable BepInEx layout is in `mod`;
+the game-specific plugin source is in `src`.
 
-Crowd Control supports multiple platforms, such as Twitch, YouTube, Discord and more.
+## Requirements
 
-# Getting Started
+- TCG Card Shop Simulator.
+- BepInEx 5 (Mono).
+- Crowd Control with the **TCG Card Shop Simulator** pack selected.
 
-To get started using this project you will need to check the ``readme.md`` in the src folder.
+## Installation and setup
 
-The mod (``src``) is built on the [WarpWorld BepInEx example plugin](https://github.com/WarpWorld/BepinEx-Example-Plugin)
-and talks to the Crowd Control app with the ConnectorLib.JSON protocol (mod 2.0.0 and newer). Build it with
-``dotnet build src\CrowdControl.TCGCardShopSimulator.csproj -c Release``; the build copies the plugin into the game's
-BepInEx folder and into ``mod``. ``tools\cc_test_server.py`` is a fake Crowd Control app for testing effects locally.
+1. Close the game.
+2. Overlay the contents of `mod` onto the game directory, preserving the
+   `BepInEx` directory and loader files.
+3. Confirm that the plugin files are under
+   `BepInEx\plugins\CrowdControl`.
+4. Start Crowd Control, select TCG Card Shop Simulator, then launch the game.
+5. Load into normal shop gameplay before accepting effects.
 
-You can load the ``TCGCardShopSimulator.cs`` in our SDK which can be found on our [Developer Page](https://developer.crowdcontrol.live/sdk/).
+## Connection behavior
 
-Follow instructions on that page to learn how to add effects to your CS file and how to activate them.
+The plugin connects to `127.0.0.1:51337` and maintains a background reconnect
+loop. Effects run only while the game reports `InLevel`; menus, loading,
+pauses, focus loss, hubs, dialogue, and unsafe player states defer effects.
 
-# Notes
+Press **F8** to toggle the plugin overlay and **F9** to request a manual
+reconnect.
 
-Keep in mind updating your local CS file and mod will not make these effects live on the Crowd Control Interact/Twitch extension. If you add new effects and wish for them to get added to the existing pack on our service you will need to reach out in the #cc-developer channel in our [Discord](https://warp.world/discord).
+## Troubleshooting
 
+- **The game does not load the plugin:** verify that the BepInEx loader files
+  and the `BepInEx\plugins\CrowdControl` directory were copied into the game
+  folder.
+- **No connection:** start the Crowd Control desktop app, select the matching
+  pack, then press **F9** in game. Check that local port `51337` is free.
+- **Effects retry:** leave menus, dialogue, pause, loading, or hub states and
+  return to active shop gameplay.
 
-## Links
-[Crowd Control](https://crowdcontrol.live)
+## Development
 
-[Developer Page](https://developer.crowdcontrol.live/)
+Build with .NET SDK 8 or later:
+
+```text
+dotnet build src\CrowdControl.TCGCardShopSimulator.csproj -c Release
+```
+
+`src\README.md` documents the `GameBaseDir` override and the local fake
+Crowd Control test server.
