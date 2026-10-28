@@ -156,26 +156,22 @@ public static class Patch_CardOpeningSequence_Update
     static readonly FieldInfo autoFireField = typeof(CardOpeningSequence).GetField("m_IsAutoFire", BindingFlags.NonPublic | BindingFlags.Instance);
     static readonly FieldInfo autoFireKeydownField = typeof(CardOpeningSequence).GetField("m_IsAutoFireKeydown", BindingFlags.NonPublic | BindingFlags.Instance);
 
+    //holds the open key down for the whole auto-open, from the pack lerping in until the screen closes, so
+    //no step of the sequence (including the final "next" press) waits on the player
     static void Postfix(CardOpeningSequence __instance)
     {
-        if (CrowdControlMod.autoOpenCards == 0) return;
-        bool autoOpen = CrowdControlMod.autoOpenCards == 1;
-        autoFireField.SetValue(__instance, autoOpen);
-        autoFireKeydownField.SetValue(__instance, autoOpen);
+        if (!CrowdControlMod.autoOpenActive) return;
 
-        if (CrowdControlMod.autoOpenCards == 2) CrowdControlMod.autoOpenCards = 0;
-    }
-}
-
-[HarmonyPatch(typeof(CustomerManager), "PlayerFinishOpenCardPack")]
-public static class Patch_PlayerFinishOpenCardPack
-{
-    static void Postfix(CustomerManager __instance)
-    {
-        if (CrowdControlMod.autoOpenCards == 1)
+        if (!GameActions.IsCardOpeningBusy(__instance))
         {
-            CrowdControlMod.autoOpenCards = 2;
+            CrowdControlMod.autoOpenActive = false;
+            autoFireField.SetValue(__instance, false);
+            autoFireKeydownField.SetValue(__instance, false);
+            return;
         }
+
+        autoFireField.SetValue(__instance, true);
+        autoFireKeydownField.SetValue(__instance, true);
     }
 }
 

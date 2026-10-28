@@ -1142,7 +1142,8 @@ namespace CrowdControl
             }
             try
             {
-                CrowdControlMod.ActionQueue.Enqueue(() =>
+                if (item2 == null) return EffectResponse.Failure(req.ID, "Unable to Find Item in Array.");
+                CrowdControlMod.SpawnQueue.Enqueue(() =>
                 {
                     RestockManager.SpawnPackageBoxItem(item2.itemType, item2.amount, item2.isBigBox);
                 });
@@ -1170,7 +1171,7 @@ namespace CrowdControl
                 }
             try
             {
-                CrowdControlMod.ActionQueue.Enqueue(() =>
+                CrowdControlMod.SpawnQueue.Enqueue(() =>
                 {
                     RestockManager.SpawnPackageBoxItem(item2.itemType, 0, true);//Have to call item2.itemType, 0 in box, true for bigbox.
                 });
@@ -1243,7 +1244,7 @@ namespace CrowdControl
                 }
             try
             {
-                CrowdControlMod.ActionQueue.Enqueue(() =>
+                CrowdControlMod.SpawnQueue.Enqueue(() =>
                 {
                     Transform randomPackageSpawnPos = RestockManager.GetRandomPackageSpawnPos();
                     ShelfManager.SpawnInteractableObjectInPackageBox(item2.objectType, randomPackageSpawnPos.position, randomPackageSpawnPos.rotation);
@@ -1259,116 +1260,63 @@ namespace CrowdControl
 
 
 
+        static readonly FieldInfo cardOpeningScreenActiveField = typeof(CardOpeningSequence).GetField("m_IsScreenActive", BindingFlags.NonPublic | BindingFlags.Instance);
+        static readonly FieldInfo cardOpeningReadyingField = typeof(CardOpeningSequence).GetField("m_IsReadyingToOpen", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        /// <summary>True while the card opening screen is doing anything at all, including lerping a pack in.</summary>
+        public static bool IsCardOpeningBusy(CardOpeningSequence sequence) =>
+            (bool)cardOpeningScreenActiveField.GetValue(sequence) || (bool)cardOpeningReadyingField.GetValue(sequence);
+
+        /// <remarks>
+        /// Runs on the game thread (the scheduler calls Start from Update) and hands the pack over immediately
+        /// rather than through ActionQueue. Deferring it let a burst of requests all pass the "player is idle"
+        /// check in the same frame; ReadyingCardPack then silently ignored every pack after the first while each
+        /// one still reported Success to Crowd Control.
+        /// </remarks>
         public static EffectResponse OpenCardPack(EffectRequest req)
         {
-            EffectStatus status = EffectStatus.Success;
-            string message = "";
-            string itemName = "";
-            RestockData spawnItem = null;
-
             string[] codeParts = req.code.Split('_');
+            if (codeParts.Length < 3) return EffectResponse.Failure(req.ID, "Cannot find card pack to spawn.");
 
-            // If this is 1, we're currently in the middle of opening packs. So retry it later. 
-            //if (CrowdControlMod.autoOpenCards == 1) return EffectResponse.Retry(req.ID);
+            string itemName = String.Join(" ", codeParts[1], codeParts[2]);
+            RestockData spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));
+            if (spawnItem == null) return EffectResponse.Failure(req.ID, "Cannot find card pack to spawn.");
 
+            InteractionPlayerController player = CSingleton<InteractionPlayerController>.Instance;
+            CardOpeningSequence sequence = CSingleton<CardOpeningSequence>.Instance;
+            if ((player == null) || (sequence == null)) return EffectResponse.Retry(req.ID);
 
+            //one pack at a time: the opening screen holds a single pack, and the player has to be free
+            if (CrowdControlMod.autoOpenActive || IsCardOpeningBusy(sequence)) return EffectResponse.Retry(req.ID);
+            if ((player.m_CurrentGameState != EGameState.DefaultState) || (player.GetHoldItemCount() > 0)) return EffectResponse.Retry(req.ID);
 
-            if (codeParts.Length > 1)
+            Transform pos = player.m_WalkerCtrl.transform;
+            ItemMeshData itemMeshData = InventoryBase.GetItemMeshData(spawnItem.itemType);
+
+            GameObject tempParent = new GameObject("TempCardPackParent");
+            tempParent.transform.position = new Vector3(pos.position.x + 1.4f, pos.position.y + 1.2f, pos.position.z);
+            tempParent.transform.rotation = pos.rotation;
+
+            Item cardPackItem = ItemSpawnManager.GetItem(tempParent.transform);
+            cardPackItem.SetMesh(itemMeshData.mesh, itemMeshData.material, spawnItem.itemType, itemMeshData.meshSecondary, itemMeshData.materialSecondary, itemMeshData.materialList);
+            cardPackItem.transform.localPosition = Vector3.zero;
+            cardPackItem.transform.localRotation = Quaternion.identity;
+            cardPackItem.transform.localScale = Vector3.one;
+            //the parent only placed the pack; leaving it would leak one GameObject per effect
+            cardPackItem.transform.SetParent(null, worldPositionStays: true);
+            UnityEngine.Object.Destroy(tempParent);
+            cardPackItem.gameObject.SetActive(true);
+
+            sequence.ReadyingCardPack(cardPackItem);
+
+            //ReadyingCardPack returns without a word when it is already busy - never report a pack it did not take
+            if (!(bool)cardOpeningReadyingField.GetValue(sequence))
             {
-                try
-                {
-                    itemName = String.Join(" ", codeParts[1], codeParts[2]);
-                    CrowdControlMod.mls.LogInfo(itemName);
-                    spawnItem = CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Find(z => z.name.ToLower().Contains(itemName.ToLower()));//Fix search Item Pack
-
-                    if (spawnItem == null)
-                    {
-                        status = EffectStatus.Failure;
-                        message = "Cannot find card pack to spawn.";
-                        return new EffectResponse(req.ID, status, message);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    status = EffectStatus.Failure;
-                    message = "Unable to spawn at player.";
-                    return new EffectResponse(req.ID, status, message);
-                }
+                cardPackItem.DisableItem();
+                return EffectResponse.Retry(req.ID);
             }
 
-            InteractionPlayerController interactionPlayerController = CSingleton<InteractionPlayerController>.Instance;
-
-
-            if (interactionPlayerController.m_CurrentGameState != EGameState.DefaultState)
-            {
-
-                status = EffectStatus.Retry;
-                message = "";
-                return new EffectResponse(req.ID, status, message);
-            }
-
-            try
-            {
-
-
-                //Debug.Log(interactionPlayerController.m_CurrentGameState);
-
-                CrowdControlMod.ActionQueue.Enqueue(() =>
-                {
-
-                    Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
-                    Vector3 position = pos.position;
-                    Quaternion rotation = pos.rotation;
-
-                    // Spawn the Item directly without using a box
-                    // Get ItemMeshData for the card pack type
-                    ItemMeshData itemMeshData = InventoryBase.GetItemMeshData(spawnItem.itemType);
-                    
-                    // Create a temporary parent GameObject for the item
-                    GameObject tempParent = new GameObject("TempCardPackParent");
-                    tempParent.transform.position = new Vector3(position.x + 1.4f, position.y + 1.2f, position.z);
-                    tempParent.transform.rotation = rotation;
-                    
-                    // Get an Item from the ItemSpawnManager
-                    Item cardPackItem = ItemSpawnManager.GetItem(tempParent.transform);
-                    
-                    // Configure the Item with the mesh data
-                    cardPackItem.SetMesh(
-                        itemMeshData.mesh, 
-                        itemMeshData.material, 
-                        spawnItem.itemType, 
-                        itemMeshData.meshSecondary, 
-                        itemMeshData.materialSecondary, 
-                        itemMeshData.materialList
-                    );
-                    
-                    // Set position and rotation (local to parent, which is already set correctly)
-                    cardPackItem.transform.localPosition = Vector3.zero;
-                    cardPackItem.transform.localRotation = Quaternion.identity;
-                    cardPackItem.transform.localScale = Vector3.one;
-                    
-                    // Activate the item
-                    cardPackItem.gameObject.SetActive(true);
-
-                    CrowdControlMod.autoOpenCards = 1;
-                    
-                    // Now directly call ReadyingCardPack with the spawned item
-                    CSingleton<CardOpeningSequence>.Instance.ReadyingCardPack(cardPackItem);
-
-                });
-
-
-            }
-            catch (Exception e)
-            {
-                CrowdControlMod.mls.LogInfo($"Crowd Control Error: {e.ToString()}");
-                CrowdControlMod.autoOpenCards = 2;
-
-                status = EffectStatus.Retry;
-            }
-
-            CrowdControlMod.autoOpenCards = 2;
-
+            CrowdControlMod.autoOpenActive = true;
             return EffectResponse.Success(req.ID);
         }
 
@@ -1908,7 +1856,8 @@ namespace CrowdControl
 
 
 
-                CrowdControlMod.ActionQueue.Enqueue(() =>
+                if (item2 == null) return EffectResponse.Failure(req.ID, "Unable to spawn at player.");
+                CrowdControlMod.SpawnQueue.Enqueue(() =>
                 {
 
                     Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;
@@ -1975,7 +1924,7 @@ namespace CrowdControl
 
 
 
-                CrowdControlMod.ActionQueue.Enqueue(() =>
+                CrowdControlMod.SpawnQueue.Enqueue(() =>
                 {
 
                     Transform pos = CSingleton<InteractionPlayerController>.Instance.m_WalkerCtrl.transform;

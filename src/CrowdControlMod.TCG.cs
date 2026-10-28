@@ -42,15 +42,29 @@ public partial class CrowdControlMod
     public static string OrgLanguage = "";
     public static string NewLanguage = "";
 
-    // 0 = idle, 1 = auto-firing the pack opener, 2 = finished (patch resets the flags then goes back to 0)
-    public static int autoOpenCards = 0;
+    /// <summary>
+    /// True from the moment an auto-open effect hands a pack to the card opening screen until that screen
+    /// closes. The CardOpeningSequence.Update patch holds the auto-fire input down for the whole time, so the
+    /// sequence can never stall halfway waiting for a key press with the game UI hidden.
+    /// </summary>
+    public static bool autoOpenActive = false;
 
     /// <summary>
     /// Work queued from background threads (Twitch chat) or deferred by effects, drained on the game thread every frame.
     /// Effects themselves already run on the game thread via the scheduler, so most of them could call the game directly;
     /// the queue is kept so the older effect code keeps working unchanged.
     /// </summary>
-    public static readonly Queue<Action> ActionQueue = new();
+    public static readonly System.Collections.Concurrent.ConcurrentQueue<Action> ActionQueue = new();
+
+    /// <summary>
+    /// Box and item spawns, drained one at a time. The game checks a spawn point for existing boxes with a
+    /// physics overlap query, which cannot see boxes created earlier in the same frame, so a burst of give
+    /// effects used to stack every box inside one another and the physics push-out threw some of them through
+    /// the floor or walls.
+    /// </summary>
+    public static readonly System.Collections.Concurrent.ConcurrentQueue<Action> SpawnQueue = new();
+    private const float SpawnInterval = 0.15f;
+    private static float nextSpawnTime = 0f;
 
     #region Twitch chat
 
@@ -75,6 +89,10 @@ public partial class CrowdControlMod
         Harmony.CustomerManagerPatches.ApplyPatches(harmony);
     }
 
+    //spawns wait while the shop scene is not live (loading, main menu) instead of throwing into the void
+    private static bool IsReadyForSpawn() =>
+        loadedIntoWorld && (CSingleton<RestockManager>.Instance != null) && (CSingleton<InteractionPlayerController>.Instance != null);
+
     /// <summary>Game-specific per-frame work, called from Update.</summary>
     private void UpdateGame()
     {
@@ -92,11 +110,23 @@ public partial class CrowdControlMod
             CreateChatStatusText(status);
         }
 
-        while (ActionQueue.Count > 0)
+        while (ActionQueue.TryDequeue(out Action action))
         {
-            Action action = ActionQueue.Dequeue();
             try { action.Invoke(); }
             catch (Exception e) { Logger.LogError($"Crowd Control action failed: {e}"); }
+        }
+
+        //unscaled, so slow motion effects do not stretch the queue out
+        if (!SpawnQueue.IsEmpty && (Time.unscaledTime >= nextSpawnTime) && IsReadyForSpawn())
+        {
+            if (SpawnQueue.TryDequeue(out Action spawn))
+            {
+                Physics.SyncTransforms();
+                try { spawn.Invoke(); }
+                catch (Exception e) { Logger.LogError($"Crowd Control spawn failed: {e}"); }
+                Physics.SyncTransforms();
+                nextSpawnTime = Time.unscaledTime + SpawnInterval;
+            }
         }
     }
 
