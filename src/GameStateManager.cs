@@ -101,7 +101,15 @@ public class GameStateManager(CrowdControlMod mod)
                 return ConnectorLib.JSON.GameState.NotReady;
 
             //title screen / not in the shop scene yet
-            if (CGameManager.Instance == null || !CGameManager.Instance.m_IsGameLevel)
+            //Do NOT use CGameManager.Instance (CSingleton<CGameManager>.Instance) here. This runs from
+            //the first Update tick, while the boot scene has no CGameManager in it, and that getter
+            //auto-creates an empty "(singleton)CGameManager". Its Awake latches the game's own
+            //CGameManager.m_Instance to the empty object, so every real scene CGameManager (the one with
+            //m_TextSO and the other serialized refs) destroys itself as a "duplicate". The session then
+            //runs on the empty manager: m_TextSO stays null, every InputTooltipUI update no-ops, and all
+            //tooltips/keybind rows show their prefab placeholders ("Action Name" / "F") forever.
+            //m_Instance is only ever assigned by a real CGameManager.Awake, so it is a safe existence check.
+            if (CGameManager.m_Instance == null || !CGameManager.m_Instance.m_IsGameLevel)
                 return ConnectorLib.JSON.GameState.Menu;
 
             //the shop scene is loading until the player controller comes up

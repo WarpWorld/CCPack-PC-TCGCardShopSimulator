@@ -17,7 +17,7 @@ public partial class CrowdControlMod : BaseUnityPlugin
     // csproj - the DLL name is set separately via the GameName property in BepinExExample.csproj)
     public const string MOD_GUID = "WarpWorld.CrowdControl"; //unique BepInEx plugin ID - fine to leave as-is since only one Crowd Control mod is installed per game
     public const string MOD_NAME = "Crowd Control"; //display name shown in the BepInEx log
-    public const string MOD_VERSION = "1.2.3"; //bump this with each release of your mod (the ccver file next to the DLL wins when present)
+    public const string MOD_VERSION = "1.2.4"; //bump this with each release of your mod (the ccver file next to the DLL wins when present)
 
     /// <summary>Whether this mod supports community-written effects loaded from disk.</summary>
     /// <remarks>
@@ -207,7 +207,7 @@ public partial class CrowdControlMod : BaseUnityPlugin
         //an alt-tabbed game (NotFocused) still shows it, so the streamer can see paused effects from another window.
         try
         {
-            if (!loadedIntoWorld || (CGameManager.Instance == null) || !CGameManager.Instance.m_IsGameLevel) return;
+            if (!loadedIntoWorld || (CGameManager.m_Instance == null) || !CGameManager.m_Instance.m_IsGameLevel) return;
             ConnectorLib.JSON.GameState state = GameStateManager?.CurrentState ?? ConnectorLib.JSON.GameState.Unknown;
             if (state is not (ConnectorLib.JSON.GameState.InLevel or ConnectorLib.JSON.GameState.NotFocused)) return;
         }
