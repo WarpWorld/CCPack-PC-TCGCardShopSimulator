@@ -1,0 +1,9 @@
+{
+    "name": "CrowdControl_TCGCardShopSimulator",
+    "version_number": "1.2.4",
+    "website_url": "https://crowdcontrol.live/",
+    "description": "Crowd Control lets your livestream viewers interact with your game in real-time on Twitch, YouTube, TikTok, and more! Viewers can trigger effects using tips, bits, or channel points, making for a fun and interactive experience.",
+    "dependencies": [
+        "BepInEx-BepInExPack-5.4.2305"
+    ]
+}
